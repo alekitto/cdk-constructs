@@ -1,0 +1,8 @@
+{
+    "name": "pg_database-lambda",
+    "version": "1.0.0",
+    "dependencies": {
+        "@aws-sdk/client-rds-data": "^3.17.0",
+        "cfn-response": "^1.0.1"
+    }
+}
