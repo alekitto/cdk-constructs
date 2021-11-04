@@ -1,3 +1,4 @@
+export * as apigateway from './apigateway';
 export * as appmesh from './appmesh';
 export * as containers from './containers';
 export * as lambda from './lambda';

@@ -1,2 +1,4 @@
+.idea/
 *.ts
 !*.d.ts
+.eslint*
