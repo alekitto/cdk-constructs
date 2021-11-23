@@ -1,9 +1,10 @@
 import {
     aws_ecs as ecs,
-    aws_s3 as s3, RemovalPolicy,
+    aws_s3 as s3, RemovalPolicy, Stack,
 } from 'aws-cdk-lib';
 import { ServiceExtension } from './extension-interfaces';
 import { S3File } from '../../s3-file';
+import { Container } from "./container";
 
 interface DbProxyExtensionProps {
     /**
@@ -22,12 +23,19 @@ interface DbProxyExtensionProps {
      * @default empty
      */
     readonly sentryDsn?: string;
+
+    /**
+     * (experimental) The health check command and associated configuration parameters for the container.
+     * @experimental
+     */
+    readonly healthCheck?: ecs.HealthCheck;
 }
 
 export class DbProxyExtension extends ServiceExtension {
     private readonly configuration: string;
     private readonly logLevel: string;
     private readonly sentryDsn: string;
+    private readonly healthCheck: ecs.HealthCheck | undefined;
 
     constructor(props: DbProxyExtensionProps) {
         super('db-proxy');
@@ -35,6 +43,7 @@ export class DbProxyExtension extends ServiceExtension {
         this.configuration = props.configuration;
         this.logLevel = props.logLevel ?? 'info';
         this.sentryDsn = props.sentryDsn ?? '';
+        this.healthCheck = props.healthCheck;
     }
 
     useTaskDefinition(taskDefinition: ecs.TaskDefinition) {
@@ -46,13 +55,16 @@ export class DbProxyExtension extends ServiceExtension {
             contents: this.configuration,
             bucket,
         });
+
         configurationFile.grantRead(taskDefinition.taskRole);
 
         this.container = taskDefinition.addContainer('db_proxy', {
             image: ecs.ContainerImage.fromRegistry('alekitto/db_proxy:edge'),
+            healthCheck: this.healthCheck,
             environment: {
                 RUST_LOG: this.logLevel,
                 SENTRY_DSN: this.sentryDsn,
+                AWS_DEFAULT_REGION: Stack.of(taskDefinition).region,
             },
             command: [
                 '-c',
@@ -67,6 +79,15 @@ export class DbProxyExtension extends ServiceExtension {
     public resolveContainerDependencies() {
         if (!this.container) {
             throw new Error('The container dependency hook was called before the container was created');
+        }
+
+        const container = this.parentService.serviceDescription.get('service-container') as Container;
+        container.container!.addLink(this.container, 'db_proxy');
+        if (undefined !== this.healthCheck) {
+            container.container!.addContainerDependencies({
+                container: this.container,
+                condition: ecs.ContainerDependencyCondition.HEALTHY,
+            });
         }
 
         const appmeshextension = this.parentService.serviceDescription.get('appmesh');
