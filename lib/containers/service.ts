@@ -34,6 +34,14 @@ export interface ServiceProps {
     readonly taskRole?: iam.IRole;
 
     /**
+     * The capacity type used by the service.
+     *
+     * @default - undefined
+     * @experimental
+     */
+    readonly capacityType?: EnvironmentCapacityType;
+
+    /**
      * (experimental) A list of Capacity Provider strategies used to place a service.
      *
      * @default - undefined
@@ -106,7 +114,7 @@ export class Service extends Construct {
         this.environment = props.environment;
         this.vpc = props.environment.vpc;
         this.cluster = props.environment.cluster;
-        this.capacityType = props.environment.capacityType;
+        this.capacityType = props.capacityType ?? props.environment.capacityType;
         this.serviceDescription = props.serviceDescription;
 
         // Check to make sure that the user has actually added a container
