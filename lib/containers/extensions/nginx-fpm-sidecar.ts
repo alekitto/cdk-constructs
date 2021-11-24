@@ -1,9 +1,9 @@
 import {
     aws_ec2 as ec2,
-    aws_ecs as ecs,
+    aws_ecs as ecs
 } from 'aws-cdk-lib';
+import { Service } from '../service';
 import { ServiceExtension } from './extension-interfaces';
-import { Service } from "../service";
 
 const NGINX_PHP_IMAGE = 'alekitto/nginx-ecs-php-fpm:latest';
 interface NginxFpmSidecarExtensionProps {
@@ -69,7 +69,7 @@ export class NginxFpmSidecarExtension extends ServiceExtension {
 
     resolveServiceDependencies(service: Service) {
         service.ecsService.connections
-            .allowFrom(ec2.Peer.ipv4(service.vpc.vpcCidrBlock), ec2.Port.tcp(80))
+            .allowFrom(ec2.Peer.ipv4(service.vpc.vpcCidrBlock), ec2.Port.tcp(80));
     }
 
     public resolveContainerDependencies() {

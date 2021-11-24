@@ -1,4 +1,4 @@
-import { aws_apigatewayv2 as apigatewayv2, Duration, Resource } from 'aws-cdk-lib';
+import { Duration, Resource, aws_apigatewayv2 as apigatewayv2 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 
 import { IAuthorizer } from '../common';
@@ -103,8 +103,7 @@ export interface HttpAuthorizerProps {
 /**
  * An authorizer for HTTP APIs
  */
-export interface IHttpAuthorizer extends IAuthorizer {
-}
+export type IHttpAuthorizer = IAuthorizer
 
 /**
  * Reference to an http authorizer
@@ -131,63 +130,63 @@ export interface HttpAuthorizerAttributes {
  * @resource AWS::ApiGatewayV2::Authorizer
  */
 export class HttpAuthorizer extends Resource implements IHttpAuthorizer {
-  /**
+    /**
    * Import an existing HTTP Authorizer into this CDK app.
    */
-  public static fromHttpAuthorizerAttributes(scope: Construct, id: string, attrs: HttpAuthorizerAttributes): IHttpRouteAuthorizer {
-    class Import extends Resource implements IHttpRouteAuthorizer {
+    public static fromHttpAuthorizerAttributes(scope: Construct, id: string, attrs: HttpAuthorizerAttributes): IHttpRouteAuthorizer {
+        class Import extends Resource implements IHttpRouteAuthorizer {
       public readonly authorizerId = attrs.authorizerId;
       public readonly authorizerType = attrs.authorizerType;
 
       public bind(): HttpRouteAuthorizerConfig {
-        return {
-          authorizerId: attrs.authorizerId,
-          authorizationType: attrs.authorizerType,
-        };
+          return {
+              authorizerId: attrs.authorizerId,
+              authorizationType: attrs.authorizerType,
+          };
       }
+        }
+        return new Import(scope, id);
     }
-    return new Import(scope, id);
-  }
 
   public readonly authorizerId: string;
 
   constructor(scope: Construct, id: string, props: HttpAuthorizerProps) {
-    super(scope, id);
+      super(scope, id);
 
-    let authorizerPayloadFormatVersion = props.payloadFormatVersion;
+      let authorizerPayloadFormatVersion = props.payloadFormatVersion;
 
-    if (props.type === HttpAuthorizerType.JWT && (!props.jwtAudience || props.jwtAudience.length === 0 || !props.jwtIssuer)) {
-      throw new Error('jwtAudience and jwtIssuer are mandatory for JWT authorizers');
-    }
+      if (props.type === HttpAuthorizerType.JWT && (!props.jwtAudience || 0 === props.jwtAudience.length || !props.jwtIssuer)) {
+          throw new Error('jwtAudience and jwtIssuer are mandatory for JWT authorizers');
+      }
 
-    if (props.type === HttpAuthorizerType.LAMBDA && !props.authorizerUri) {
-      throw new Error('authorizerUri is mandatory for Lambda authorizers');
-    }
+      if (props.type === HttpAuthorizerType.LAMBDA && !props.authorizerUri) {
+          throw new Error('authorizerUri is mandatory for Lambda authorizers');
+      }
 
-    /**
+      /**
      * This check is required because Cloudformation will fail stack creation is this property
      * is set for the JWT authorizer. AuthorizerPayloadFormatVersion can only be set for REQUEST authorizer
      */
-    if (props.type === HttpAuthorizerType.LAMBDA && typeof authorizerPayloadFormatVersion === 'undefined') {
-      authorizerPayloadFormatVersion = AuthorizerPayloadVersion.VERSION_2_0;
-    }
+      if (props.type === HttpAuthorizerType.LAMBDA && 'undefined' === typeof authorizerPayloadFormatVersion) {
+          authorizerPayloadFormatVersion = AuthorizerPayloadVersion.VERSION_2_0;
+      }
 
-    const resource = new apigatewayv2.CfnAuthorizer(this, 'Resource', {
-      name: props.authorizerName ?? id,
-      apiId: props.httpApi.apiId,
-      authorizerType: props.type,
-      identitySource: props.identitySource,
-      jwtConfiguration: undefinedIfNoKeys({
-        audience: props.jwtAudience,
-        issuer: props.jwtIssuer,
-      }),
-      enableSimpleResponses: props.enableSimpleResponses,
-      authorizerPayloadFormatVersion,
-      authorizerUri: props.authorizerUri,
-      authorizerResultTtlInSeconds: props.resultsCacheTtl?.toSeconds(),
-    });
+      const resource = new apigatewayv2.CfnAuthorizer(this, 'Resource', {
+          name: props.authorizerName ?? id,
+          apiId: props.httpApi.apiId,
+          authorizerType: props.type,
+          identitySource: props.identitySource,
+          jwtConfiguration: undefinedIfNoKeys({
+              audience: props.jwtAudience,
+              issuer: props.jwtIssuer,
+          }),
+          enableSimpleResponses: props.enableSimpleResponses,
+          authorizerPayloadFormatVersion,
+          authorizerUri: props.authorizerUri,
+          authorizerResultTtlInSeconds: props.resultsCacheTtl?.toSeconds(),
+      });
 
-    this.authorizerId = resource.ref;
+      this.authorizerId = resource.ref;
   }
 }
 
@@ -244,17 +243,17 @@ export interface IHttpRouteAuthorizer {
 }
 
 function undefinedIfNoKeys<A>(obj: A): A | undefined {
-  const allUndefined = Object.values(obj).every(val => val === undefined);
-  return allUndefined ? undefined : obj;
+    const allUndefined = Object.values(obj).every(val => val === undefined);
+    return allUndefined ? undefined : obj;
 }
 
 /**
  * Explicitly configure no authorizers on specific HTTP API routes.
  */
 export class HttpNoneAuthorizer implements IHttpRouteAuthorizer {
-  public bind(_: HttpRouteAuthorizerBindOptions): HttpRouteAuthorizerConfig {
-    return {
-      authorizationType: 'NONE',
-    };
-  }
+    public bind(_: HttpRouteAuthorizerBindOptions): HttpRouteAuthorizerConfig {
+        return {
+            authorizationType: 'NONE',
+        };
+    }
 }

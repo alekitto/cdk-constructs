@@ -1,11 +1,11 @@
-import { CfnVirtualNode } from "aws-cdk-lib/aws-appmesh";
-import { Construct } from 'constructs';
-import { HealthCheck } from './health-checks';
-import { ConnectionPoolConfig } from './private/utils';
 import {
     GrpcConnectionPool, GrpcTimeout, Http2ConnectionPool, HttpConnectionPool,
-    HttpTimeout, OutlierDetection, Protocol, TcpConnectionPool, TcpTimeout,
+    HttpTimeout, OutlierDetection, Protocol, TcpConnectionPool, TcpTimeout
 } from './shared-interfaces';
+import { CfnVirtualNode } from 'aws-cdk-lib/aws-appmesh';
+import { ConnectionPoolConfig } from './private/utils';
+import { Construct } from 'constructs';
+import { HealthCheck } from './health-checks';
 import { TlsListener } from './tls-listener';
 
 /**
@@ -172,7 +172,9 @@ class VirtualNodeListenerImpl extends VirtualNodeListener {
                 private readonly port: number = 8080,
                 private readonly tls: TlsListener | undefined,
                 private readonly outlierDetection: OutlierDetection | undefined,
-                private readonly connectionPool: ConnectionPoolConfig | undefined) { super(); }
+                private readonly connectionPool: ConnectionPoolConfig | undefined) {
+        super();
+    }
 
     public bind(scope: Construct): VirtualNodeListenerConfig {
         return {

@@ -1,15 +1,18 @@
 import * as appmesh from '../../appmesh';
 import {
+    CfnMapping,
+    Duration,
+    Stack,
     aws_ec2 as ec2,
     aws_ecr as ecr,
     aws_ecs as ecs,
-    aws_iam as iam, CfnMapping, Duration,
-    region_info, Stack,
+    aws_iam as iam,
+    region_info
 } from 'aws-cdk-lib';
+import { Container, TrafficPort } from './container';
+import { ServiceBuild, ServiceExtension } from './extension-interfaces';
 import { Construct } from 'constructs';
 import { Service } from '../service';
-import { Container, TrafficPort } from './container';
-import { ServiceExtension, ServiceBuild } from './extension-interfaces';
 
 // The version of the App Mesh envoy sidecar to add to the task.
 const APP_MESH_ENVOY_SIDECAR_VERSION = 'v1.17.2.0-prod';
@@ -98,7 +101,7 @@ export class AppMeshExtension extends ServiceExtension {
         this.scope = scope;
 
         // Make sure that the parent cluster for this service has
-        // a namespace attached.
+        // A namespace attached.
         if (!this.parentService.cluster.defaultCloudMapNamespace) {
             this.parentService.environment.addDefaultCloudMapNamespace({
                 // Name the namespace after the environment name.
@@ -121,38 +124,38 @@ export class AppMeshExtension extends ServiceExtension {
             ...props,
 
             // App Mesh requires AWS VPC networking mode so that each
-            // task can have its own IP address
+            // Task can have its own IP address
             networkMode: ecs.NetworkMode.AWS_VPC,
 
             // This configures the envoy container as a proxy for all
-            // traffic going into and out of the task, with a few exceptions
-            // for metadata endpoints or other ports that need direct
-            // communication
+            // Traffic going into and out of the task, with a few exceptions
+            // For metadata endpoints or other ports that need direct
+            // Communication
             proxyConfiguration: new ecs.AppMeshProxyConfiguration({
                 containerName: 'envoy',
                 properties: {
-                    appPorts: [this.trafficPort.port],
+                    appPorts: [ this.trafficPort.port ],
                     proxyEgressPort: 15001,
                     proxyIngressPort: 15000,
 
                     // The App Mesh proxy runs with this user ID, and this keeps its
-                    // own outbound connections from recursively attempting to infinitely proxy.
+                    // Own outbound connections from recursively attempting to infinitely proxy.
                     ignoredUID: 1337,
 
                     // This GID is ignored and any outbound traffic originating from containers that
-                    // use this group ID will be ignored by the proxy. This is primarily utilized by
-                    // the FireLens extension, so that outbound application logs don't have to go through Envoy
-                    // and therefore add extra burden to the proxy sidecar. Instead the logs can go directly
-                    // to CloudWatch
+                    // Use this group ID will be ignored by the proxy. This is primarily utilized by
+                    // The FireLens extension, so that outbound application logs don't have to go through Envoy
+                    // And therefore add extra burden to the proxy sidecar. Instead the logs can go directly
+                    // To CloudWatch
                     ignoredGID: 1338,
 
                     egressIgnoredIPs: [
                         '169.254.170.2', // Allow services to talk directly to ECS metadata endpoints
-                        '169.254.169.254', // and EC2 instance endpoint
+                        '169.254.169.254', // And EC2 instance endpoint
                     ],
 
                     // If there is outbound traffic to specific ports that you want to
-                    // ignore the proxy those ports can be added here.
+                    // Ignore the proxy those ports can be added here.
                     egressIgnoredPorts: this.egressIgnoredPorts,
                 },
             }),
@@ -167,7 +170,7 @@ export class AppMeshExtension extends ServiceExtension {
         const region = Stack.of(this.scope).region;
 
         // This is currently necessary because App Mesh has different images in each region,
-        // and some regions have their images in a different account. See:
+        // And some regions have their images in a different account. See:
         // https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
         const mapping = new CfnMapping(this.scope, `${this.parentService.id}-envoy-image-account-mapping`, {
             mapping: {
@@ -231,19 +234,19 @@ export class AppMeshExtension extends ServiceExtension {
         });
 
         // Modify the task definition role to allow the Envoy sidecar to get
-        // configuration from the Envoy control plane, for this particular
-        // mesh only.
+        // Configuration from the Envoy control plane, for this particular
+        // Mesh only.
         taskDefinition.addToTaskRolePolicy(new iam.PolicyStatement({
             resources: [
                 this.mesh.meshArn,
                 this.mesh.meshArn + '/*',
             ],
-            actions: ['appmesh:StreamAggregatedResources'],
+            actions: [ 'appmesh:StreamAggregatedResources' ],
         }));
 
         // Raise the number of open file descriptors allowed. This is
-        // necessary when the Envoy proxy is handling large amounts of
-        // traffic.
+        // Necessary when the Envoy proxy is handling large amounts of
+        // Traffic.
         this.container.addUlimits({
             softLimit: 1024000,
             hardLimit: 1024000,
@@ -266,7 +269,7 @@ export class AppMeshExtension extends ServiceExtension {
             },
 
             // These specific deployment settings are currently required in order to
-            // maintain availability during a rolling deploy of the service with App Mesh
+            // Maintain availability during a rolling deploy of the service with App Mesh
             // https://docs.aws.amazon.com/app-mesh/latest/userguide/best-practices.html#reduce-deployment-velocity
             minHealthyPercent: 100,
             maxHealthyPercent: 125, // Note that at low task count the Service will boost this setting higher
@@ -274,7 +277,7 @@ export class AppMeshExtension extends ServiceExtension {
     }
 
     // Now that the service is defined, we can create the AppMesh virtual service
-    // and virtual node for the real service
+    // And virtual node for the real service
     public useService(service: ecs.Ec2Service | ecs.FargateService) {
         const containerextension = this.parentService.serviceDescription.get('service-container') as Container;
         if (!containerextension) {
@@ -313,23 +316,23 @@ export class AppMeshExtension extends ServiceExtension {
                     service: service.cloudMapService,
                 })
                 : undefined,
-            listeners: [addListener(this.protocol, this.trafficPort.port)],
+            listeners: [ addListener(this.protocol, this.trafficPort.port) ],
         });
 
         // Create a virtual router for this service. This allows for retries
-        // and other similar behaviors.
+        // And other similar behaviors.
         this.virtualRouter = new appmesh.VirtualRouter(this.scope, `${this.parentService.id}-virtual-router`, {
             mesh: this.mesh,
-            listeners: [this.virtualRouterListener(this.trafficPort.port)],
+            listeners: [ this.virtualRouterListener(this.trafficPort.port) ],
             virtualRouterName: meshNameCleanup(this.parentService.id),
         });
 
         // Form the service name that requests will be made to
         const serviceName = `${this.parentService.id}.${cloudmapNamespace.namespaceName}`;
-        const weightedTargets: appmesh.WeightedTarget[] = [{
+        const weightedTargets: appmesh.WeightedTarget[] = [ {
             virtualNode: this.virtualNode,
             weight: 1,
-        }];
+        } ];
         // Now add the virtual node as a route in the virtual router
         // Ensure that the route type matches the protocol type.
         this.route = this.virtualRouter.addRoute(`${meshNameCleanup(this.parentService.id)}-route`, {
@@ -337,7 +340,7 @@ export class AppMeshExtension extends ServiceExtension {
         });
 
         // Now create a virtual service. Relationship goes like this:
-        // virtual service -> virtual router -> virtual node
+        // Virtual service -> virtual router -> virtual node
         this.virtualService = new appmesh.VirtualService(this.scope, `${this.parentService.id}-virtual-service`, {
             virtualServiceProvider: appmesh.VirtualServiceProvider.virtualRouter(this.virtualRouter),
             virtualServiceName: serviceName,
@@ -345,14 +348,14 @@ export class AppMeshExtension extends ServiceExtension {
     }
 
     // Connect the app mesh extension for this service to an app mesh
-    // extension on another service.
+    // Extension on another service.
     public connectToService(otherService: Service) {
         const otherAppMesh = otherService.serviceDescription.get('appmesh') as AppMeshExtension;
         const otherContainer = otherService.serviceDescription.get('service-container') as Container;
 
         // Do a check to ensure that these services are in the same environment.
         // Currently this extension only supports connecting services within
-        // the same VPC, same App Mesh service mesh, and same Cloud Map namespace
+        // The same VPC, same App Mesh service mesh, and same Cloud Map namespace
         if (otherAppMesh.parentService.environment.id !== this.parentService.environment.id) {
             throw new Error(`Unable to connect service '${this.parentService.id}' in environment '${this.parentService.environment.id}' to service '${otherService.id}' in environment '${otherAppMesh.parentService.environment.id}' because services can not be connected across environment boundaries`);
         }
@@ -361,13 +364,13 @@ export class AppMeshExtension extends ServiceExtension {
         const port = (trafficPort.protocol ?? ecs.Protocol.TCP) === ecs.Protocol.TCP ? ec2.Port.tcp(trafficPort.port) : ec2.Port.udp(trafficPort.port);
 
         // First allow this service to talk to the other service
-        // at a network level. This opens the security groups so that
-        // the security groups of these two services to each other
+        // At a network level. This opens the security groups so that
+        // The security groups of these two services to each other
         this.parentService.ecsService.connections.allowTo(otherService.ecsService, port, `Accept inbound traffic from ${this.parentService.id}`);
 
         // Next update the app mesh config so that the local Envoy
-        // proxy on this service knows how to route traffic to
-        // nodes from the other service.
+        // Proxy on this service knows how to route traffic to
+        // Nodes from the other service.
         this.virtualNode.addBackend(appmesh.Backend.virtualService(otherAppMesh.virtualService));
     }
 

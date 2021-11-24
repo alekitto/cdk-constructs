@@ -1,4 +1,4 @@
-import { aws_cloudwatch as cloudwatch, IResource } from 'aws-cdk-lib';
+import { IResource, aws_cloudwatch as cloudwatch } from 'aws-cdk-lib';
 import { IDomainName } from './domain-name';
 
 /**

@@ -1,6 +1,5 @@
-import { aws_servicediscovery as cloudmap } from 'aws-cdk-lib';
+import { aws_appmesh as appmesh, aws_servicediscovery as cloudmap } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { CfnVirtualNode } from "aws-cdk-lib/aws-appmesh";
 
 /**
  * Represents the properties needed to define CloudMap Service Discovery
@@ -31,14 +30,14 @@ export interface ServiceDiscoveryConfig {
      *
      * @default - no DNS based service discovery
      */
-    readonly dns?: CfnVirtualNode.DnsServiceDiscoveryProperty;
+    readonly dns?: appmesh.CfnVirtualNode.DnsServiceDiscoveryProperty;
 
     /**
      * Cloud Map based Service Discovery
      *
      * @default - no Cloud Map based service discovery
      */
-    readonly cloudmap?: CfnVirtualNode.AwsCloudMapServiceDiscoveryProperty;
+    readonly cloudmap?: appmesh.CfnVirtualNode.AwsCloudMapServiceDiscoveryProperty;
 }
 
 /**
@@ -104,6 +103,8 @@ class CloudMapServiceDiscovery extends ServiceDiscovery {
 }
 
 function renderAttributes(attrs?: {[key: string]: string}) {
-    if (attrs === undefined) { return undefined; }
-    return Object.entries(attrs).map(([key, value]) => ({ key, value }));
+    if (attrs === undefined) {
+        return undefined;
+    }
+    return Object.entries(attrs).map(([ key, value ]) => ({ key, value }));
 }

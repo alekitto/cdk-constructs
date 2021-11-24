@@ -1,4 +1,4 @@
-import { aws_apigatewayv2 as apigatewayv2, Resource } from 'aws-cdk-lib';
+import { Resource, aws_apigatewayv2 as apigatewayv2 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { IIntegration } from '../common';
 import { IWebSocketApi } from './api';
@@ -51,14 +51,14 @@ export class WebSocketIntegration extends Resource implements IWebSocketIntegrat
   public readonly webSocketApi: IWebSocketApi;
 
   constructor(scope: Construct, id: string, props: WebSocketIntegrationProps) {
-    super(scope, id);
-    const integ = new apigatewayv2.CfnIntegration(this, 'Resource', {
-      apiId: props.webSocketApi.apiId,
-      integrationType: props.integrationType,
-      integrationUri: props.integrationUri,
-    });
-    this.integrationId = integ.ref;
-    this.webSocketApi = props.webSocketApi;
+      super(scope, id);
+      const integ = new apigatewayv2.CfnIntegration(this, 'Resource', {
+          apiId: props.webSocketApi.apiId,
+          integrationType: props.integrationType,
+          integrationUri: props.integrationUri,
+      });
+      this.integrationId = integ.ref;
+      this.webSocketApi = props.webSocketApi;
   }
 }
 

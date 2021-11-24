@@ -1,14 +1,15 @@
+import * as api from './s3-file-handler/api';
 import * as path from 'path';
 import {
+    CustomResource,
+    Stack,
+    custom_resources as cr,
     aws_iam as iam,
     aws_lambda as lambda,
-    aws_s3 as s3,
-    custom_resources as cr,
-    CustomResource, Stack,
+    aws_s3 as s3
 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import * as api from './s3-file-handler/api';
-import { IBucket } from "aws-cdk-lib/aws-s3";
+import { IBucket } from 'aws-cdk-lib/aws-s3';
 
 interface S3FileProps {
     /**
@@ -68,9 +69,9 @@ export class S3File extends Construct {
      * @experimental
      */
     grantRead(grantee: iam.IGrantable): void {
-        // we give permissions on all files in the bucket since we don't want to
-        // accidentally revoke permission on old versions when deploying a new
-        // version (for example, when using Lambda traffic shifting).
+        // We give permissions on all files in the bucket since we don't want to
+        // Accidentally revoke permission on old versions when deploying a new
+        // Version (for example, when using Lambda traffic shifting).
         this.bucket.grantRead(grantee);
     }
 }
@@ -98,7 +99,7 @@ class S3FileProvider extends Construct {
                 handler: 'index.onEvent',
                 initialPolicy: [
                     new iam.PolicyStatement({
-                        resources: ['*'],
+                        resources: [ '*' ],
                         actions: [
                             's3:GetObject*',
                             's3:GetBucket*',

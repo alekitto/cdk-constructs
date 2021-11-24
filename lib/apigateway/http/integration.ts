@@ -1,9 +1,9 @@
-import { aws_apigatewayv2 as apigatewayv2, Resource } from 'aws-cdk-lib';
+import { HttpMethod, IHttpRoute } from './route';
+import { Resource, aws_apigatewayv2 as apigatewayv2 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+import { IHttpApi } from './api';
 import { IIntegration } from '../common';
 import { ParameterMapping } from '../parameter-mapping';
-import { IHttpApi } from './api';
-import { HttpMethod, IHttpRoute } from './route';
 
 /**
  * Represents an Integration for an HTTP API.
@@ -58,14 +58,14 @@ export class PayloadFormatVersion {
    * Typically used if there is a version number that the CDK doesn't support yet
    */
   public static custom(version: string) {
-    return new PayloadFormatVersion(version);
+      return new PayloadFormatVersion(version);
   }
 
-  /** version as a string */
+  /** Version as a string */
   public readonly version: string;
 
   private constructor(version: string) {
-    this.version = version;
+      this.version = version;
   }
 }
 
@@ -142,26 +142,26 @@ export class HttpIntegration extends Resource implements IHttpIntegration {
   public readonly httpApi: IHttpApi;
 
   constructor(scope: Construct, id: string, props: HttpIntegrationProps) {
-    super(scope, id);
-    const integ = new apigatewayv2.CfnIntegration(this, 'Resource', {
-      apiId: props.httpApi.apiId,
-      integrationType: props.integrationType,
-      integrationUri: props.integrationUri,
-      integrationMethod: props.method,
-      connectionId: props.connectionId,
-      connectionType: props.connectionType,
-      payloadFormatVersion: props.payloadFormatVersion?.version,
-      requestParameters: props.parameterMapping?.mappings,
-    });
+      super(scope, id);
+      const integ = new apigatewayv2.CfnIntegration(this, 'Resource', {
+          apiId: props.httpApi.apiId,
+          integrationType: props.integrationType,
+          integrationUri: props.integrationUri,
+          integrationMethod: props.method,
+          connectionId: props.connectionId,
+          connectionType: props.connectionType,
+          payloadFormatVersion: props.payloadFormatVersion?.version,
+          requestParameters: props.parameterMapping?.mappings,
+      });
 
-    if (props.secureServerName) {
-      integ.tlsConfig = {
-        serverNameToVerify: props.secureServerName,
-      };
-    }
+      if (props.secureServerName) {
+          integ.tlsConfig = {
+              serverNameToVerify: props.secureServerName,
+          };
+      }
 
-    this.integrationId = integ.ref;
-    this.httpApi = props.httpApi;
+      this.integrationId = integ.ref;
+      this.httpApi = props.httpApi;
   }
 }
 

@@ -1,15 +1,14 @@
-import { HealthCheck } from './health-checks';
-import { ConnectionPoolConfig } from './private/utils';
 import {
     GrpcConnectionPool,
     Http2ConnectionPool,
     HttpConnectionPool,
-    Protocol,
+    Protocol
 } from './shared-interfaces';
-import { TlsListener } from './tls-listener';
-
+import { CfnVirtualGateway } from 'aws-cdk-lib/aws-appmesh';
+import { ConnectionPoolConfig } from './private/utils';
 import { Construct } from 'constructs';
-import { CfnVirtualGateway } from "aws-cdk-lib/aws-appmesh";
+import { HealthCheck } from './health-checks';
+import { TlsListener } from './tls-listener';
 
 /**
  * Represents the properties needed to define a Listeners for a VirtualGateway

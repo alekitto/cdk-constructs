@@ -1,4 +1,4 @@
-import { aws_apigatewayv2 as apigatewayv2, aws_ec2 as ec2, IResource, Lazy, Names, Resource } from 'aws-cdk-lib';
+import { IResource, Lazy, Names, Resource, aws_apigatewayv2 as apigatewayv2, aws_ec2 as ec2 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 
 /**
@@ -67,17 +67,17 @@ export interface VpcLinkAttributes {
  * Specifies an API Gateway VPC link for a HTTP API to access resources in an Amazon Virtual Private Cloud (VPC).
  */
 export class VpcLink extends Resource implements IVpcLink {
-  /**
+    /**
    * Import a VPC Link by specifying its attributes.
    */
-  public static fromVpcLinkAttributes(scope: Construct, id: string, attrs: VpcLinkAttributes): IVpcLink {
-    class Import extends Resource implements IVpcLink {
+    public static fromVpcLinkAttributes(scope: Construct, id: string, attrs: VpcLinkAttributes): IVpcLink {
+        class Import extends Resource implements IVpcLink {
       public vpcLinkId = attrs.vpcLinkId;
       public vpc = attrs.vpc;
-    }
+        }
 
-    return new Import(scope, id);
-  }
+        return new Import(scope, id);
+    }
 
   public readonly vpcLinkId: string;
   public readonly vpc: ec2.IVpc;
@@ -86,23 +86,23 @@ export class VpcLink extends Resource implements IVpcLink {
   private readonly securityGroups = new Array<ec2.ISecurityGroup>();
 
   constructor(scope: Construct, id: string, props: VpcLinkProps) {
-    super(scope, id);
-    this.vpc = props.vpc;
+      super(scope, id);
+      this.vpc = props.vpc;
 
-    const cfnResource = new apigatewayv2.CfnVpcLink(this, 'Resource', {
-      name: props.vpcLinkName || Lazy.string({ produce: () => Names.uniqueId(this) }),
-      subnetIds: Lazy.list({ produce: () => this.renderSubnets() }),
-      securityGroupIds: Lazy.list({ produce: () => this.renderSecurityGroups() }),
-    });
+      const cfnResource = new apigatewayv2.CfnVpcLink(this, 'Resource', {
+          name: props.vpcLinkName || Lazy.string({ produce: () => Names.uniqueId(this) }),
+          subnetIds: Lazy.list({ produce: () => this.renderSubnets() }),
+          securityGroupIds: Lazy.list({ produce: () => this.renderSecurityGroups() }),
+      });
 
-    this.vpcLinkId = cfnResource.ref;
+      this.vpcLinkId = cfnResource.ref;
 
-    const { subnets } = props.vpc.selectSubnets(props.subnets ?? { subnetType: ec2.SubnetType.PRIVATE_WITH_NAT });
-    this.addSubnets(...subnets);
+      const { subnets } = props.vpc.selectSubnets(props.subnets ?? { subnetType: ec2.SubnetType.PRIVATE_WITH_NAT });
+      this.addSubnets(...subnets);
 
-    if (props.securityGroups) {
-      this.addSecurityGroups(...props.securityGroups);
-    }
+      if (props.securityGroups) {
+          this.addSecurityGroups(...props.securityGroups);
+      }
   }
 
   /**
@@ -111,7 +111,7 @@ export class VpcLink extends Resource implements IVpcLink {
    * @param subnets
    */
   public addSubnets(...subnets: ec2.ISubnet[]) {
-    this.subnets.push(...subnets);
+      this.subnets.push(...subnets);
   }
 
   /**
@@ -120,14 +120,14 @@ export class VpcLink extends Resource implements IVpcLink {
    * @param groups
    */
   public addSecurityGroups(...groups: ec2.ISecurityGroup[]) {
-    this.securityGroups.push(...groups);
+      this.securityGroups.push(...groups);
   }
 
   private renderSubnets() {
-    return this.subnets.map(subnet => subnet.subnetId);
+      return this.subnets.map(subnet => subnet.subnetId);
   }
 
   private renderSecurityGroups() {
-    return this.securityGroups.map(sg => sg.securityGroupId);
+      return this.securityGroups.map(sg => sg.securityGroupId);
   }
 }

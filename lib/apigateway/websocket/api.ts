@@ -1,9 +1,9 @@
-import { Construct } from 'constructs';
-import { aws_apigatewayv2 as apigatewayv2 } from 'aws-cdk-lib';
-import { IApi } from '../common';
-import { ApiBase } from '../common/base';
-import { WebSocketRouteIntegrationConfig, WebSocketIntegration } from './integration';
+import { WebSocketIntegration, WebSocketRouteIntegrationConfig } from './integration';
 import { WebSocketRoute, WebSocketRouteOptions } from './route';
+import { ApiBase } from '../common/base';
+import { Construct } from 'constructs';
+import { IApi } from '../common';
+import { aws_apigatewayv2 as apigatewayv2 } from 'aws-cdk-lib';
 
 /**
  * Represents a WebSocket API
@@ -74,57 +74,57 @@ export class WebSocketApi extends ApiBase implements IWebSocketApi {
   public readonly webSocketApiName?: string;
 
   constructor(scope: Construct, id: string, props?: WebSocketApiProps) {
-    super(scope, id);
+      super(scope, id);
 
-    this.webSocketApiName = props?.apiName ?? id;
+      this.webSocketApiName = props?.apiName ?? id;
 
-    const resource = new apigatewayv2.CfnApi(this, 'Resource', {
-      name: this.webSocketApiName,
-      protocolType: 'WEBSOCKET',
-      description: props?.description,
-      routeSelectionExpression: props?.routeSelectionExpression ?? '$request.body.action',
-    });
-    this.apiId = resource.ref;
-    this.apiEndpoint = resource.attrApiEndpoint;
+      const resource = new apigatewayv2.CfnApi(this, 'Resource', {
+          name: this.webSocketApiName,
+          protocolType: 'WEBSOCKET',
+          description: props?.description,
+          routeSelectionExpression: props?.routeSelectionExpression ?? '$request.body.action',
+      });
+      this.apiId = resource.ref;
+      this.apiEndpoint = resource.attrApiEndpoint;
 
-    if (props?.connectRouteOptions) {
-      this.addRoute('$connect', props.connectRouteOptions);
-    }
-    if (props?.disconnectRouteOptions) {
-      this.addRoute('$disconnect', props.disconnectRouteOptions);
-    }
-    if (props?.defaultRouteOptions) {
-      this.addRoute('$default', props.defaultRouteOptions);
-    }
+      if (props?.connectRouteOptions) {
+          this.addRoute('$connect', props.connectRouteOptions);
+      }
+      if (props?.disconnectRouteOptions) {
+          this.addRoute('$disconnect', props.disconnectRouteOptions);
+      }
+      if (props?.defaultRouteOptions) {
+          this.addRoute('$default', props.defaultRouteOptions);
+      }
   }
 
   /**
    * @internal
    */
   public _addIntegration(scope: Construct, config: WebSocketRouteIntegrationConfig): WebSocketIntegration {
-    const { configHash, integration: existingIntegration } = this._integrationCache.getIntegration(scope, config);
-    if (existingIntegration) {
-      return existingIntegration as WebSocketIntegration;
-    }
+      const { configHash, integration: existingIntegration } = this._integrationCache.getIntegration(scope, config);
+      if (existingIntegration) {
+          return existingIntegration as WebSocketIntegration;
+      }
 
-    const integration = new WebSocketIntegration(scope, `WebSocketIntegration-${configHash}`, {
-      webSocketApi: this,
-      integrationType: config.type,
-      integrationUri: config.uri,
-    });
-    this._integrationCache.saveIntegration(scope, config, integration);
+      const integration = new WebSocketIntegration(scope, `WebSocketIntegration-${configHash}`, {
+          webSocketApi: this,
+          integrationType: config.type,
+          integrationUri: config.uri,
+      });
+      this._integrationCache.saveIntegration(scope, config, integration);
 
-    return integration;
+      return integration;
   }
 
   /**
    * Add a new route
    */
   public addRoute(routeKey: string, options: WebSocketRouteOptions) {
-    return new WebSocketRoute(this, `${routeKey}-Route`, {
-      webSocketApi: this,
-      routeKey,
-      ...options,
-    });
+      return new WebSocketRoute(this, `${routeKey}-Route`, {
+          webSocketApi: this,
+          routeKey,
+          ...options,
+      });
   }
 }

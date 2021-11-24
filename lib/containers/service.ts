@@ -1,16 +1,12 @@
+import { EnvironmentCapacityType, ServiceBuild } from './extensions/extension-interfaces';
 import {
     aws_ec2 as ec2,
     aws_ecs as ecs,
-    aws_iam as iam,
+    aws_iam as iam
 } from 'aws-cdk-lib';
-import { IEnvironment } from './environment';
-import { EnvironmentCapacityType, ServiceBuild } from './extensions/extension-interfaces';
-import { ServiceDescription } from './service-description';
-
-// keep this import separate from other imports to reduce chance for merge conflicts with v2-main
-// eslint-disable-next-line no-duplicate-imports, import/order
 import { Construct } from 'constructs';
-import { CapacityProviderStrategy } from "aws-cdk-lib/lib/aws-ecs/lib/cluster";
+import { IEnvironment } from './environment';
+import { ServiceDescription } from './service-description';
 
 /**
  * The settings for an ECS Service.
@@ -47,7 +43,7 @@ export interface ServiceProps {
      * @default - undefined
      * @experimental
      */
-    readonly capacityProviderStrategies?: CapacityProviderStrategy[];
+    readonly capacityProviderStrategies?: ecs.CapacityProviderStrategy[];
 }
 
 /**
@@ -132,8 +128,8 @@ export class Service extends Construct {
         }
 
         // At the point of preparation all extensions have been defined on the service
-        // so give each extension a chance to now add hooks to other extensions if
-        // needed
+        // So give each extension a chance to now add hooks to other extensions if
+        // Needed
         for (const extensions in this.serviceDescription.extensions) {
             if (this.serviceDescription.extensions[extensions]) {
                 this.serviceDescription.extensions[extensions].addHooks();
@@ -147,7 +143,7 @@ export class Service extends Construct {
             memoryMiB: '512',
 
             // Allow user to pre-define the taskRole so that it can be used in resource policies that may
-            // be defined before the ECS service exists in a CDK application
+            // Be defined before the ECS service exists in a CDK application
             taskRole: props.taskRole,
 
             // Ensure that the task definition supports both EC2 and Fargate
@@ -171,7 +167,7 @@ export class Service extends Construct {
         }
 
         // Now that all containers are created, give each extension a chance
-        // to bake its dependency graph
+        // To bake its dependency graph
         for (const extensions of Object.keys(this.serviceDescription.extensions)) {
             if (this.serviceDescription.extensions[extensions]) {
                 this.serviceDescription.extensions[extensions].resolveContainerDependencies();
@@ -179,7 +175,7 @@ export class Service extends Construct {
         }
 
         // Give each extension a chance to mutate the service props before
-        // service creation
+        // Service creation
         let serviceProps = {
             cluster: this.cluster,
             taskDefinition: this.taskDefinition,
@@ -195,22 +191,22 @@ export class Service extends Construct {
         }
 
         // If a maxHealthyPercent and desired count has been set while minHealthyPercent == 100% then we
-        // need to do some failsafe checking to ensure that the maxHealthyPercent
-        // actually allows a rolling deploy. Otherwise it is possible to end up with
-        // blocked deploys that can take no action because minHealtyhPercent == 100%
-        // prevents running, healthy tasks from being stopped, but a low maxHealthyPercent
-        // can also prevents new parallel tasks from being started.
-        if (serviceProps.maxHealthyPercent && serviceProps.desiredCount && serviceProps.minHealthyPercent && serviceProps.minHealthyPercent == 100) {
-            if (serviceProps.desiredCount == 1) {
+        // Need to do some failsafe checking to ensure that the maxHealthyPercent
+        // Actually allows a rolling deploy. Otherwise it is possible to end up with
+        // Blocked deploys that can take no action because minHealtyhPercent == 100%
+        // Prevents running, healthy tasks from being stopped, but a low maxHealthyPercent
+        // Can also prevents new parallel tasks from being started.
+        if (serviceProps.maxHealthyPercent && serviceProps.desiredCount && serviceProps.minHealthyPercent && 100 == serviceProps.minHealthyPercent) {
+            if (1 == serviceProps.desiredCount) {
                 // If there is one task then we must allow max percentage to be at
-                // least 200% for another replacement task to be added
+                // Least 200% for another replacement task to be added
                 serviceProps = {
                     ...serviceProps,
                     maxHealthyPercent: Math.max(200, serviceProps.maxHealthyPercent),
                 };
-            } else if (serviceProps.desiredCount <= 3) {
+            } else if (3 >= serviceProps.desiredCount) {
                 // If task count is 2 or 3 then max percent must be at least 150% to
-                // allow one replacement task to be launched at a time.
+                // Allow one replacement task to be launched at a time.
                 serviceProps = {
                     ...serviceProps,
                     maxHealthyPercent: Math.max(150, serviceProps.maxHealthyPercent),
@@ -218,8 +214,8 @@ export class Service extends Construct {
             } else {
                 // For anything higher than 3 tasks set max percent to at least 125%
                 // For 4 tasks this will allow exactly one extra replacement task
-                // at a time, for any higher task count it will allow 25% of the tasks
-                // to be replaced at a time.
+                // At a time, for any higher task count it will allow 25% of the tasks
+                // To be replaced at a time.
                 serviceProps = {
                     ...serviceProps,
                     maxHealthyPercent: Math.max(125, serviceProps.maxHealthyPercent),
@@ -227,7 +223,7 @@ export class Service extends Construct {
             }
         }
 
-        if ((props.capacityProviderStrategies ?? []).length > 0) {
+        if (0 < (props.capacityProviderStrategies ?? []).length) {
             serviceProps = {
                 ...serviceProps,
                 capacityProviderStrategies: props.capacityProviderStrategies,
@@ -235,7 +231,7 @@ export class Service extends Construct {
         }
 
         // Now that the service props are determined we can create
-        // the service
+        // The service
         if (this.capacityType === EnvironmentCapacityType.EC2) {
             this.ecsService = new ecs.Ec2Service(this.scope, `${this.id}-service`, serviceProps);
         } else if (this.capacityType === EnvironmentCapacityType.FARGATE) {

@@ -1,4 +1,4 @@
-import { aws_apigatewayv2 as apigatewayv2, Resource } from 'aws-cdk-lib';
+import { Resource, aws_apigatewayv2 as apigatewayv2 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { IRoute } from '../common';
 import { IWebSocketApi } from './api';
@@ -36,7 +36,7 @@ export interface WebSocketRouteOptions {
  */
 export interface WebSocketRouteProps extends WebSocketRouteOptions {
   /**
-   * the API the route is associated with
+   * The API the route is associated with
    */
   readonly webSocketApi: IWebSocketApi;
 
@@ -61,23 +61,23 @@ export class WebSocketRoute extends Resource implements IWebSocketRoute {
   public readonly integrationResponseId?: string;
 
   constructor(scope: Construct, id: string, props: WebSocketRouteProps) {
-    super(scope, id);
+      super(scope, id);
 
-    this.webSocketApi = props.webSocketApi;
-    this.routeKey = props.routeKey;
+      this.webSocketApi = props.webSocketApi;
+      this.routeKey = props.routeKey;
 
-    const config = props.integration.bind({
-      route: this,
-      scope: this,
-    });
+      const config = props.integration.bind({
+          route: this,
+          scope: this,
+      });
 
-    const integration = props.webSocketApi._addIntegration(this, config);
+      const integration = props.webSocketApi._addIntegration(this, config);
 
-    const route = new apigatewayv2.CfnRoute(this, 'Resource', {
-      apiId: props.webSocketApi.apiId,
-      routeKey: props.routeKey,
-      target: `integrations/${integration.integrationId}`,
-    });
-    this.routeId = route.ref;
+      const route = new apigatewayv2.CfnRoute(this, 'Resource', {
+          apiId: props.webSocketApi.apiId,
+          routeKey: props.routeKey,
+          target: `integrations/${integration.integrationId}`,
+      });
+      this.routeId = route.ref;
   }
 }

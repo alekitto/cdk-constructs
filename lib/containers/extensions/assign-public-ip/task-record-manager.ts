@@ -1,5 +1,10 @@
 import * as path from 'path';
 import {
+    CustomResource,
+    Duration,
+    Fn,
+    RemovalPolicy,
+    custom_resources,
     aws_dynamodb as dynamodb,
     aws_ecs as ecs,
     aws_events as events,
@@ -7,14 +12,9 @@ import {
     aws_iam as iam,
     aws_lambda as lambda,
     aws_lambda_event_sources as lambda_es,
-    aws_sqs as sqs,
-    aws_route53 as route53,
-    custom_resources,
-    Duration,
-    Fn,
-    RemovalPolicy, CustomResource,
+    aws_route53 as route53, aws_sqs as sqs
 } from 'aws-cdk-lib';
-import { Construct } from "constructs";
+import { Construct } from 'constructs';
 
 export interface TaskRecordManagerProps {
     service: ecs.Ec2Service | ecs.FargateService;
@@ -36,11 +36,11 @@ export class TaskRecordManager extends Construct {
         });
 
         // Time limit for processing queue items - we set the lambda time limit to
-        // this value as well.
+        // This value as well.
         const eventsQueueVisibilityTimeout = Duration.seconds(30);
 
         // This queue lets us batch together ecs task state events. This is useful
-        // for when when we would be otherwise bombarded by them.
+        // For when when we would be otherwise bombarded by them.
         const eventsQueue = new sqs.Queue(this, 'EventsQueue', {
             deadLetterQueue: {
                 maxReceiveCount: 500,
@@ -62,12 +62,12 @@ export class TaskRecordManager extends Construct {
         // Put the cluster's task state changes events into the queue.
         const runningEventRule = new events.Rule(this, 'RuleRunning', {
             eventPattern: {
-                source: ['aws.ecs'],
-                detailType: ['ECS Task State Change'],
+                source: [ 'aws.ecs' ],
+                detailType: [ 'ECS Task State Change' ],
                 detail: {
-                    clusterArn: [props.service.cluster.clusterArn],
-                    lastStatus: ['RUNNING'],
-                    desiredStatus: ['RUNNING'],
+                    clusterArn: [ props.service.cluster.clusterArn ],
+                    lastStatus: [ 'RUNNING' ],
+                    desiredStatus: [ 'RUNNING' ],
                 },
             },
             targets: [
@@ -77,12 +77,12 @@ export class TaskRecordManager extends Construct {
 
         const stoppedEventRule = new events.Rule(this, 'RuleStopped', {
             eventPattern: {
-                source: ['aws.ecs'],
-                detailType: ['ECS Task State Change'],
+                source: [ 'aws.ecs' ],
+                detailType: [ 'ECS Task State Change' ],
                 detail: {
-                    clusterArn: [props.service.cluster.clusterArn],
-                    lastStatus: ['STOPPED'],
-                    desiredStatus: ['STOPPED'],
+                    clusterArn: [ props.service.cluster.clusterArn ],
+                    lastStatus: [ 'STOPPED' ],
+                    desiredStatus: [ 'STOPPED' ],
                 },
             },
             targets: [
@@ -100,7 +100,7 @@ export class TaskRecordManager extends Construct {
         });
 
         // Fully qualified domain name of the record
-        const recordFqdn = Fn.join('.', [props.dnsRecordName, props.dnsZone.zoneName]);
+        const recordFqdn = Fn.join('.', [ props.dnsRecordName, props.dnsZone.zoneName ]);
 
         // Allow access to manage a zone's records.
         const dnsPolicyStatement = new iam.PolicyStatement({
@@ -109,12 +109,12 @@ export class TaskRecordManager extends Construct {
                 'route53:ChangeResourceRecordSets',
                 'route53:ListResourceRecordSets',
             ],
-            resources: [props.dnsZone.hostedZoneArn],
+            resources: [ props.dnsZone.hostedZoneArn ],
         });
 
         // This function consumes events from the event queue and does the work of
-        // querying task IP addresses and creating, updating record sets. When there
-        // are zero tasks, it deletes the record set.
+        // Querying task IP addresses and creating, updating record sets. When there
+        // Are zero tasks, it deletes the record set.
         const eventHandler = new lambda.Function(this, 'EventHandler', {
             code: code,
             handler: 'index.queue_handler',
@@ -136,8 +136,8 @@ export class TaskRecordManager extends Construct {
                 // Look up task IPs
                 new iam.PolicyStatement({
                     effect: iam.Effect.ALLOW,
-                    actions: ['ec2:DescribeNetworkInterfaces'],
-                    resources: ['*'],
+                    actions: [ 'ec2:DescribeNetworkInterfaces' ],
+                    resources: [ '*' ],
                 }),
                 dnsPolicyStatement,
             ],
@@ -145,7 +145,7 @@ export class TaskRecordManager extends Construct {
         recordsTable.grantReadWriteData(eventHandler);
 
         // The lambda for a custom resource provider that deletes dangling record
-        // sets when the stack is deleted.
+        // Sets when the stack is deleted.
         const cleanupResourceProviderHandler = new lambda.Function(this, 'CleanupResourceProviderHandler', {
             code: code,
             handler: 'index.cleanup_resource_handler',
@@ -169,7 +169,7 @@ export class TaskRecordManager extends Construct {
         });
 
         // Prime the event queue with a message so that changes to dns config are
-        // quickly applied.
+        // Quickly applied.
         const primingSdkCall: custom_resources.AwsSdkCall = {
             service: 'SQS',
             action: 'sendMessage',
@@ -178,7 +178,7 @@ export class TaskRecordManager extends Construct {
                 DelaySeconds: 10,
                 MessageBody: '{ "prime": true }',
                 // Add the hosted zone id and record name so that priming occurs with
-                // dns config updates.
+                // Dns config updates.
                 MessageAttributes: {
                     HostedZoneId: { DataType: 'String', StringValue: props.dnsZone.hostedZoneId },
                     RecordName: { DataType: 'String', StringValue: props.dnsRecordName },
@@ -193,8 +193,8 @@ export class TaskRecordManager extends Construct {
             policy: custom_resources.AwsCustomResourcePolicy.fromStatements([
                 new iam.PolicyStatement({
                     effect: iam.Effect.ALLOW,
-                    actions: ['sqs:SendMessage'],
-                    resources: [eventsQueue.queueArn],
+                    actions: [ 'sqs:SendMessage' ],
+                    resources: [ eventsQueue.queueArn ],
                 }),
             ]),
         });
@@ -205,7 +205,7 @@ export class TaskRecordManager extends Construct {
         // Ensure that the cleanup resource is deleted last (so it can clean up)
         props.service.taskDefinition.node.addDependency(cleanupResource);
         // Ensure that the event rules are created first so we can catch the first
-        // state transitions.
+        // State transitions.
         props.service.taskDefinition.node.addDependency(runningEventRule);
         props.service.taskDefinition.node.addDependency(stoppedEventRule);
     }

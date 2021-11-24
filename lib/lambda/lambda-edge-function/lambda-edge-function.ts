@@ -1,13 +1,13 @@
+import * as path from 'path';
 import {
-    aws_lambda as lambda,
-    aws_iam as iam,
-    custom_resources,
     CustomResource,
     Duration,
     Resource,
+    custom_resources,
+    aws_iam as iam,
+    aws_lambda as lambda
 } from 'aws-cdk-lib';
-import * as path from 'path';
-import { Construct } from "constructs";
+import { Construct } from 'constructs';
 
 export interface LambdaEdgeFunctionProps {
     /**

@@ -1,4 +1,4 @@
-import { aws_apigatewayv2 as apigatewayv2, IResource, Resource } from 'aws-cdk-lib';
+import { IResource, Resource, aws_apigatewayv2 as apigatewayv2 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { HttpApi } from '../http';
 import { IApi } from './api';
@@ -33,12 +33,12 @@ export interface ApiMappingProps {
   readonly api: IApi;
 
   /**
-   * custom domain name of the mapping target
+   * Custom domain name of the mapping target
    */
   readonly domainName: IDomainName;
 
   /**
-   * stage for the ApiMapping resource
+   * Stage for the ApiMapping resource
    * required for WebSocket API
    * defaults to default stage of an HTTP API
    *
@@ -62,15 +62,15 @@ export interface ApiMappingAttributes {
  * @resource AWS::ApiGatewayV2::ApiMapping
  */
 export class ApiMapping extends Resource implements IApiMapping {
-  /**
-   * import from API ID
+    /**
+   * Import from API ID
    */
-  public static fromApiMappingAttributes(scope: Construct, id: string, attrs: ApiMappingAttributes): IApiMapping {
-    class Import extends Resource implements IApiMapping {
+    public static fromApiMappingAttributes(scope: Construct, id: string, attrs: ApiMappingAttributes): IApiMapping {
+        class Import extends Resource implements IApiMapping {
       public readonly apiMappingId = attrs.apiMappingId;
+        }
+        return new Import(scope, id);
     }
-    return new Import(scope, id);
-  }
   /**
    * ID of the API Mapping
    */
@@ -87,39 +87,39 @@ export class ApiMapping extends Resource implements IApiMapping {
   public readonly domainName: IDomainName;
 
   constructor(scope: Construct, id: string, props: ApiMappingProps) {
-    super(scope, id);
+      super(scope, id);
 
-    let stage = props.stage;
-    if (!stage) {
-      if (props.api instanceof HttpApi) {
-        if (props.api.defaultStage) {
-          stage = props.api.defaultStage;
-        } else {
-          throw new Error('stage is required if default stage is not available');
-        }
-      } else {
-        throw new Error('stage is required for WebSocket API');
+      let stage = props.stage;
+      if (!stage) {
+          if (props.api instanceof HttpApi) {
+              if (props.api.defaultStage) {
+                  stage = props.api.defaultStage;
+              } else {
+                  throw new Error('stage is required if default stage is not available');
+              }
+          } else {
+              throw new Error('stage is required for WebSocket API');
+          }
       }
-    }
 
-    if (props.apiMappingKey === '') {
-      throw new Error('empty string for api mapping key not allowed');
-    }
+      if ('' === props.apiMappingKey) {
+          throw new Error('empty string for api mapping key not allowed');
+      }
 
-    const apiMappingProps: apigatewayv2.CfnApiMappingProps = {
-      apiId: props.api.apiId,
-      domainName: props.domainName.name,
-      stage: stage.stageName,
-      apiMappingKey: props.apiMappingKey,
-    };
+      const apiMappingProps: apigatewayv2.CfnApiMappingProps = {
+          apiId: props.api.apiId,
+          domainName: props.domainName.name,
+          stage: stage.stageName,
+          apiMappingKey: props.apiMappingKey,
+      };
 
-    const resource = new apigatewayv2.CfnApiMapping(this, 'Resource', apiMappingProps);
+      const resource = new apigatewayv2.CfnApiMapping(this, 'Resource', apiMappingProps);
 
-    // ensure the dependency on the provided stage
-    this.node.addDependency(stage);
+      // Ensure the dependency on the provided stage
+      this.node.addDependency(stage);
 
-    this.apiMappingId = resource.ref;
-    this.mappingKey = props.apiMappingKey;
-    this.domainName = props.domainName;
+      this.apiMappingId = resource.ref;
+      this.mappingKey = props.apiMappingKey;
+      this.domainName = props.domainName;
   }
 }

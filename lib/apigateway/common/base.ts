@@ -1,8 +1,8 @@
-import { aws_cloudwatch as cloudwatch, Resource } from 'aws-cdk-lib';
-import { IntegrationCache } from '../private/integration-cache';
-import { IApi } from './api';
-import { ApiMapping } from './api-mapping';
 import { DomainMappingOptions, IStage } from './stage';
+import { Resource, aws_cloudwatch as cloudwatch } from 'aws-cdk-lib';
+import { ApiMapping } from './api-mapping';
+import { IApi } from './api';
+import { IntegrationCache } from '../private/integration-cache';
 
 /**
  * Base class representing an API
@@ -17,12 +17,12 @@ export abstract class ApiBase extends Resource implements IApi {
   protected _integrationCache: IntegrationCache = new IntegrationCache();
 
   public metric(metricName: string, props?: cloudwatch.MetricOptions): cloudwatch.Metric {
-    return new cloudwatch.Metric({
-      namespace: 'AWS/ApiGateway',
-      metricName,
-      dimensionsMap: { ApiId: this.apiId },
-      ...props,
-    }).attachTo(this);
+      return new cloudwatch.Metric({
+          namespace: 'AWS/ApiGateway',
+          metricName,
+          dimensionsMap: { ApiId: this.apiId },
+          ...props,
+      }).attachTo(this);
   }
 }
 
@@ -50,22 +50,22 @@ export abstract class StageBase extends Resource implements IStage {
    * @internal
    */
   protected _addDomainMapping(domainMapping: DomainMappingOptions) {
-    if (this._apiMapping) {
-      throw new Error('Only one ApiMapping allowed per Stage');
-    }
-    this._apiMapping = new ApiMapping(this, `${domainMapping.domainName}${domainMapping.mappingKey}`, {
-      api: this.baseApi,
-      domainName: domainMapping.domainName,
-      stage: this,
-      apiMappingKey: domainMapping.mappingKey,
-    });
-    // ensure the dependency
-    this.node.addDependency(domainMapping.domainName);
+      if (this._apiMapping) {
+          throw new Error('Only one ApiMapping allowed per Stage');
+      }
+      this._apiMapping = new ApiMapping(this, `${domainMapping.domainName}${domainMapping.mappingKey}`, {
+          api: this.baseApi,
+          domainName: domainMapping.domainName,
+          stage: this,
+          apiMappingKey: domainMapping.mappingKey,
+      });
+      // Ensure the dependency
+      this.node.addDependency(domainMapping.domainName);
   }
 
   public metric(metricName: string, props?: cloudwatch.MetricOptions): cloudwatch.Metric {
-    return this.baseApi.metric(metricName, props).with({
-      dimensionsMap: { ApiId: this.baseApi.apiId, Stage: this.stageName },
-    }).attachTo(this);
+      return this.baseApi.metric(metricName, props).with({
+          dimensionsMap: { ApiId: this.baseApi.apiId, Stage: this.stageName },
+      }).attachTo(this);
   }
 }

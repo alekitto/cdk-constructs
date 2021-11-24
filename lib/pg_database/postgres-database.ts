@@ -1,14 +1,15 @@
 import {
+    CustomResource,
+    Duration,
+    custom_resources as cr,
     aws_ec2 as ec2,
     aws_iam as iam,
     aws_lambda as lambda,
     aws_logs as logs,
-    aws_rds as rds,
-    custom_resources as cr,
-    CustomResource, Duration
-} from "aws-cdk-lib";
-import { Construct } from "constructs";
-import { Code } from "../lambda/code";
+    aws_rds as rds
+} from 'aws-cdk-lib';
+import { Code } from '../lambda';
+import { Construct } from 'constructs';
 
 interface PostgresDatabaseProps {
     vpc: ec2.IVpc,
@@ -32,7 +33,7 @@ export class PostgresDatabase extends Construct {
                         '-c',
                         'export npm_config_cache=$(mktemp -d) && cp -r /asset-input/* /asset-output/ && cd /asset-output && npm ci',
                     ],
-                }
+                },
             }),
             handler: 'index.handler',
             logRetention: logs.RetentionDays.ONE_DAY,
@@ -58,7 +59,7 @@ export class PostgresDatabase extends Construct {
 
         const provider = new cr.Provider(this, 'Provider', {
             onEventHandler: onEvent,
-            logRetention: logs.RetentionDays.ONE_DAY   // default is INFINITE
+            logRetention: logs.RetentionDays.ONE_DAY, // Default is INFINITE
         });
 
         new CustomResource(this, 'Database', {
@@ -67,7 +68,7 @@ export class PostgresDatabase extends Construct {
                 ClusterArn: props.cluster.clusterArn,
                 Database: props.databaseName,
             },
-            serviceToken: provider.serviceToken
+            serviceToken: provider.serviceToken,
         });
     }
 }

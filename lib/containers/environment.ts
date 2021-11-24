@@ -1,6 +1,6 @@
 import {
     aws_ec2 as ec2,
-    aws_ecs as ecs,
+    aws_ecs as ecs
 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { EnvironmentCapacityType } from './extensions/extension-interfaces';

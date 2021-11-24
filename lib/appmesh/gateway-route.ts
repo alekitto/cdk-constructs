@@ -1,14 +1,12 @@
-import * as cdk from 'aws-cdk-lib';
-import { ArnFormat } from 'aws-cdk-lib';
-import { CfnGatewayRoute } from "aws-cdk-lib/aws-appmesh";
+import { ArnFormat, Fn, IResource, Lazy, Names, Resource, Stack, aws_appmesh as appmesh } from 'aws-cdk-lib';
+import { IVirtualGateway, VirtualGateway } from './virtual-gateway';
 import { Construct } from 'constructs';
 import { GatewayRouteSpec } from './gateway-route-spec';
-import { IVirtualGateway, VirtualGateway } from './virtual-gateway';
 
 /**
  * Interface for which all GatewayRoute based classes MUST implement
  */
-export interface IGatewayRoute extends cdk.IResource {
+export interface IGatewayRoute extends IResource {
     /**
      * The name of the GatewayRoute
      *
@@ -61,14 +59,14 @@ export interface GatewayRouteProps extends GatewayRouteBaseProps {
  *
  * @see https://docs.aws.amazon.com/app-mesh/latest/userguide/gateway-routes.html
  */
-export class GatewayRoute extends cdk.Resource implements IGatewayRoute {
+export class GatewayRoute extends Resource implements IGatewayRoute {
     /**
      * Import an existing GatewayRoute given an ARN
      */
     public static fromGatewayRouteArn(scope: Construct, id: string, gatewayRouteArn: string): IGatewayRoute {
-        return new class extends cdk.Resource implements IGatewayRoute {
+        return new class extends Resource implements IGatewayRoute {
             readonly gatewayRouteArn = gatewayRouteArn;
-            readonly gatewayRouteName = cdk.Fn.select(4, cdk.Fn.split('/', cdk.Stack.of(scope).splitArn(gatewayRouteArn, ArnFormat.SLASH_RESOURCE_NAME).resourceName!));
+            readonly gatewayRouteName = Fn.select(4, Fn.split('/', Stack.of(scope).splitArn(gatewayRouteArn, ArnFormat.SLASH_RESOURCE_NAME).resourceName!));
             readonly virtualGateway = VirtualGateway.fromVirtualGatewayArn(this, 'virtualGateway', gatewayRouteArn);
         }(scope, id);
     }
@@ -77,9 +75,9 @@ export class GatewayRoute extends cdk.Resource implements IGatewayRoute {
      * Import an existing GatewayRoute given attributes
      */
     public static fromGatewayRouteAttributes(scope: Construct, id: string, attrs: GatewayRouteAttributes): IGatewayRoute {
-        return new class extends cdk.Resource implements IGatewayRoute {
+        return new class extends Resource implements IGatewayRoute {
             readonly gatewayRouteName = attrs.gatewayRouteName;
-            readonly gatewayRouteArn = cdk.Stack.of(scope).formatArn({
+            readonly gatewayRouteArn = Stack.of(scope).formatArn({
                 service: 'appmesh',
                 resource: `mesh/${attrs.virtualGateway.mesh.meshName}/virtualGateway/${attrs.virtualGateway.virtualGatewayName}/gatewayRoute`,
                 resourceName: this.gatewayRouteName,
@@ -105,13 +103,13 @@ export class GatewayRoute extends cdk.Resource implements IGatewayRoute {
 
     constructor(scope: Construct, id: string, props: GatewayRouteProps) {
         super(scope, id, {
-            physicalName: props.gatewayRouteName || cdk.Lazy.string({ produce: () => cdk.Names.uniqueId(this) }),
+            physicalName: props.gatewayRouteName || Lazy.string({ produce: () => Names.uniqueId(this) }),
         });
 
         this.virtualGateway = props.virtualGateway;
         const routeSpecConfig = props.routeSpec.bind(this);
 
-        const gatewayRoute = new CfnGatewayRoute(this, 'Resource', {
+        const gatewayRoute = new appmesh.CfnGatewayRoute(this, 'Resource', {
             gatewayRouteName: this.physicalName,
             meshName: props.virtualGateway.mesh.meshName,
             spec: {

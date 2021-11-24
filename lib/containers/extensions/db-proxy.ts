@@ -1,10 +1,12 @@
 import {
+    RemovalPolicy,
+    Stack,
     aws_ecs as ecs,
-    aws_s3 as s3, RemovalPolicy, Stack,
+    aws_s3 as s3
 } from 'aws-cdk-lib';
-import { ServiceExtension } from './extension-interfaces';
+import { Container } from './container';
 import { S3File } from '../../s3-file';
-import { Container } from "./container";
+import { ServiceExtension } from './extension-interfaces';
 
 interface DbProxyExtensionProps {
     /**
@@ -47,11 +49,11 @@ export class DbProxyExtension extends ServiceExtension {
     }
 
     useTaskDefinition(taskDefinition: ecs.TaskDefinition) {
-        let bucket = new s3.Bucket(taskDefinition, 'DbProxyConfigurationBucket', {
+        const bucket = new s3.Bucket(taskDefinition, 'DbProxyConfigurationBucket', {
             removalPolicy: RemovalPolicy.DESTROY,
         });
 
-        let configurationFile = new S3File(taskDefinition, 'DbProxyConfigurationFile', {
+        const configurationFile = new S3File(taskDefinition, 'DbProxyConfigurationFile', {
             contents: this.configuration,
             bucket,
         });

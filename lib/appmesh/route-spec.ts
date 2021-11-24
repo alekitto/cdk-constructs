@@ -1,8 +1,7 @@
-import * as cdk from 'aws-cdk-lib';
+import { Duration, aws_appmesh as appmesh } from 'aws-cdk-lib';
+import { GrpcTimeout, HttpTimeout, Protocol, TcpTimeout } from './shared-interfaces';
 import { Construct } from 'constructs';
-import { HttpTimeout, GrpcTimeout, Protocol, TcpTimeout } from './shared-interfaces';
 import { IVirtualNode } from './virtual-node';
-import { CfnRoute } from "aws-cdk-lib/aws-appmesh";
 
 /**
  * Properties for the Weighted Targets in the route
@@ -128,7 +127,7 @@ export interface HttpHeaderMatchConfig {
     /**
      * The HTTP route header.
      */
-    readonly httpRouteHeader: CfnRoute.HttpRouteHeaderProperty;
+    readonly httpRouteHeader: appmesh.CfnRoute.HttpRouteHeaderProperty;
 }
 
 /**
@@ -267,7 +266,7 @@ class HeaderMatchImpl extends HttpHeaderMatch {
     constructor(
         private readonly headerName: string,
         private readonly invert: boolean,
-        private readonly matchProperty: CfnRoute.HeaderMatchMethodProperty,
+        private readonly matchProperty: appmesh.CfnRoute.HeaderMatchMethodProperty,
     ) {
         super();
     }
@@ -357,7 +356,7 @@ export interface HttpRetryPolicy {
     /**
      * The timeout for each retry attempt
      */
-    readonly retryTimeout: cdk.Duration;
+    readonly retryTimeout: Duration;
 
     /**
      * TCP events on which to retry. The event occurs before any processing of a
@@ -451,10 +450,10 @@ export interface GrpcRouteSpecOptions extends RouteSpecOptionsBase {
     readonly retryPolicy?: GrpcRetryPolicy;
 }
 
-/** gRPC retry policy */
+/** GRPC retry policy */
 export interface GrpcRetryPolicy extends HttpRetryPolicy {
     /**
-     * gRPC events on which to retry. You must specify at least one value
+     * GRPC events on which to retry. You must specify at least one value
      * for at least one types of retry events.
      *
      * @default - no retries for gRPC events
@@ -463,7 +462,7 @@ export interface GrpcRetryPolicy extends HttpRetryPolicy {
 }
 
 /**
- * gRPC events
+ * GRPC events
  */
 export enum GrpcRetryEvent {
     /**
@@ -511,28 +510,28 @@ export interface RouteSpecConfig {
      *
      * @default - no http spec
      */
-    readonly httpRouteSpec?: CfnRoute.HttpRouteProperty;
+    readonly httpRouteSpec?: appmesh.CfnRoute.HttpRouteProperty;
 
     /**
      * The spec for an http2 route
      *
      * @default - no http2 spec
      */
-    readonly http2RouteSpec?: CfnRoute.HttpRouteProperty;
+    readonly http2RouteSpec?: appmesh.CfnRoute.HttpRouteProperty;
 
     /**
      * The spec for a grpc route
      *
      * @default - no grpc spec
      */
-    readonly grpcRouteSpec?: CfnRoute.GrpcRouteProperty;
+    readonly grpcRouteSpec?: appmesh.CfnRoute.GrpcRouteProperty;
 
     /**
      * The spec for a tcp route
      *
      * @default - no tcp spec
      */
-    readonly tcpRouteSpec?: CfnRoute.TcpRouteProperty;
+    readonly tcpRouteSpec?: appmesh.CfnRoute.TcpRouteProperty;
 
     /**
      * The priority for the route. Routes are matched based on the specified
@@ -608,25 +607,25 @@ class HttpRouteSpec extends RouteSpec {
             const httpRetryEvents = props.retryPolicy.httpRetryEvents ?? [];
             const tcpRetryEvents = props.retryPolicy.tcpRetryEvents ?? [];
 
-            if (httpRetryEvents.length + tcpRetryEvents.length === 0) {
+            if (0 === httpRetryEvents.length + tcpRetryEvents.length) {
                 throw new Error('You must specify one value for at least one of `httpRetryEvents` or `tcpRetryEvents`');
             }
 
             this.retryPolicy = {
                 ...props.retryPolicy,
-                httpRetryEvents: httpRetryEvents.length > 0 ? httpRetryEvents : undefined,
-                tcpRetryEvents: tcpRetryEvents.length > 0 ? tcpRetryEvents : undefined,
+                httpRetryEvents: 0 < httpRetryEvents.length ? httpRetryEvents : undefined,
+                tcpRetryEvents: 0 < tcpRetryEvents.length ? tcpRetryEvents : undefined,
             };
         }
     }
 
     public bind(scope: Construct): RouteSpecConfig {
         const prefixPath = this.match ? this.match.prefixPath : '/';
-        if (prefixPath[0] != '/') {
+        if ('/' != prefixPath[0]) {
             throw new Error(`Prefix Path must start with \'/\', got: ${prefixPath}`);
         }
 
-        const httpConfig: CfnRoute.HttpRouteProperty = {
+        const httpConfig: appmesh.CfnRoute.HttpRouteProperty = {
             action: {
                 weightedTargets: renderWeightedTargets(this.weightedTargets),
             },
@@ -710,15 +709,15 @@ class GrpcRouteSpec extends RouteSpec {
             const httpRetryEvents = props.retryPolicy.httpRetryEvents ?? [];
             const tcpRetryEvents = props.retryPolicy.tcpRetryEvents ?? [];
 
-            if (grpcRetryEvents.length + httpRetryEvents.length + tcpRetryEvents.length === 0) {
+            if (0 === grpcRetryEvents.length + httpRetryEvents.length + tcpRetryEvents.length) {
                 throw new Error('You must specify one value for at least one of `grpcRetryEvents`, `httpRetryEvents` or `tcpRetryEvents`');
             }
 
             this.retryPolicy = {
                 ...props.retryPolicy,
-                grpcRetryEvents: grpcRetryEvents.length > 0 ? grpcRetryEvents : undefined,
-                httpRetryEvents: httpRetryEvents.length > 0 ? httpRetryEvents : undefined,
-                tcpRetryEvents: tcpRetryEvents.length > 0 ? tcpRetryEvents : undefined,
+                grpcRetryEvents: 0 < grpcRetryEvents.length ? grpcRetryEvents : undefined,
+                httpRetryEvents: 0 < httpRetryEvents.length ? httpRetryEvents : undefined,
+                tcpRetryEvents: 0 < tcpRetryEvents.length ? tcpRetryEvents : undefined,
             };
         }
     }
@@ -743,8 +742,8 @@ class GrpcRouteSpec extends RouteSpec {
 /**
  * Utility method to add weighted route targets to an existing route
  */
-function renderWeightedTargets(weightedTargets: WeightedTarget[]): CfnRoute.WeightedTargetProperty[] {
-    const renderedTargets: CfnRoute.WeightedTargetProperty[] = [];
+function renderWeightedTargets(weightedTargets: WeightedTarget[]): appmesh.CfnRoute.WeightedTargetProperty[] {
+    const renderedTargets: appmesh.CfnRoute.WeightedTargetProperty[] = [];
     for (const t of weightedTargets) {
         renderedTargets.push({
             virtualNode: t.virtualNode.virtualNodeName,
@@ -757,7 +756,7 @@ function renderWeightedTargets(weightedTargets: WeightedTarget[]): CfnRoute.Weig
 /**
  * Utility method to construct a route timeout object
  */
-function renderTimeout(timeout?: HttpTimeout): CfnRoute.HttpTimeoutProperty | undefined {
+function renderTimeout(timeout?: HttpTimeout): appmesh.CfnRoute.HttpTimeoutProperty | undefined {
     return timeout
         ? {
             idle: timeout?.idle !== undefined
@@ -776,7 +775,7 @@ function renderTimeout(timeout?: HttpTimeout): CfnRoute.HttpTimeoutProperty | un
         : undefined;
 }
 
-function renderHttpRetryPolicy(retryPolicy: HttpRetryPolicy): CfnRoute.HttpRetryPolicyProperty {
+function renderHttpRetryPolicy(retryPolicy: HttpRetryPolicy): appmesh.CfnRoute.HttpRetryPolicyProperty {
     return {
         maxRetries: retryPolicy.retryAttempts,
         perRetryTimeout: {
@@ -788,7 +787,7 @@ function renderHttpRetryPolicy(retryPolicy: HttpRetryPolicy): CfnRoute.HttpRetry
     };
 }
 
-function renderGrpcRetryPolicy(retryPolicy: GrpcRetryPolicy): CfnRoute.GrpcRetryPolicyProperty {
+function renderGrpcRetryPolicy(retryPolicy: GrpcRetryPolicy): appmesh.CfnRoute.GrpcRetryPolicyProperty {
     return {
         ...renderHttpRetryPolicy(retryPolicy),
         grpcRetryEvents: retryPolicy.grpcRetryEvents,

@@ -1,16 +1,15 @@
-import * as cdk from 'aws-cdk-lib';
-import { ArnFormat, aws_iam as iam } from 'aws-cdk-lib';
-import { Construct } from 'constructs';
-import { IMesh, Mesh } from './mesh';
-import { ServiceDiscovery } from './service-discovery';
 import { AccessLog, Backend, BackendDefaults } from './shared-interfaces';
+import { ArnFormat, Fn, IResource, Lazy, Names, Resource, Stack, aws_iam as iam } from 'aws-cdk-lib';
+import { IMesh, Mesh } from './mesh';
 import { VirtualNodeListener, VirtualNodeListenerConfig } from './virtual-node-listener';
-import { CfnVirtualNode } from "aws-cdk-lib/aws-appmesh";
+import { CfnVirtualNode } from 'aws-cdk-lib/aws-appmesh';
+import { Construct } from 'constructs';
+import { ServiceDiscovery } from './service-discovery';
 
 /**
  * Interface which all VirtualNode based classes must implement
  */
-export interface IVirtualNode extends cdk.IResource {
+export interface IVirtualNode extends IResource {
     /**
      * The name of the VirtualNode
      *
@@ -98,7 +97,7 @@ export interface VirtualNodeProps extends VirtualNodeBaseProps {
     readonly mesh: IMesh;
 }
 
-abstract class VirtualNodeBase extends cdk.Resource implements IVirtualNode {
+abstract class VirtualNodeBase extends Resource implements IVirtualNode {
     /**
      * The name of the VirtualNode
      */
@@ -117,8 +116,8 @@ abstract class VirtualNodeBase extends cdk.Resource implements IVirtualNode {
     public grantStreamAggregatedResources(identity: iam.IGrantable): iam.Grant {
         return iam.Grant.addToPrincipal({
             grantee: identity,
-            actions: ['appmesh:StreamAggregatedResources'],
-            resourceArns: [this.virtualNodeArn],
+            actions: [ 'appmesh:StreamAggregatedResources' ],
+            resourceArns: [ this.virtualNodeArn ],
         });
     }
 }
@@ -139,9 +138,9 @@ export class VirtualNode extends VirtualNodeBase {
     public static fromVirtualNodeArn(scope: Construct, id: string, virtualNodeArn: string): IVirtualNode {
         return new class extends VirtualNodeBase {
             readonly virtualNodeArn = virtualNodeArn;
-            private readonly parsedArn = cdk.Fn.split('/', cdk.Stack.of(scope).splitArn(virtualNodeArn, ArnFormat.SLASH_RESOURCE_NAME).resourceName!);
-            readonly mesh = Mesh.fromMeshName(this, 'Mesh', cdk.Fn.select(0, this.parsedArn));
-            readonly virtualNodeName = cdk.Fn.select(2, this.parsedArn);
+            private readonly parsedArn = Fn.split('/', Stack.of(scope).splitArn(virtualNodeArn, ArnFormat.SLASH_RESOURCE_NAME).resourceName!);
+            readonly mesh = Mesh.fromMeshName(this, 'Mesh', Fn.select(0, this.parsedArn));
+            readonly virtualNodeName = Fn.select(2, this.parsedArn);
         }(scope, id);
     }
 
@@ -152,7 +151,7 @@ export class VirtualNode extends VirtualNodeBase {
         return new class extends VirtualNodeBase {
             readonly mesh = attrs.mesh;
             readonly virtualNodeName = attrs.virtualNodeName;
-            readonly virtualNodeArn = cdk.Stack.of(this).formatArn({
+            readonly virtualNodeArn = Stack.of(this).formatArn({
                 service: 'appmesh',
                 resource: `mesh/${attrs.mesh.meshName}/virtualNode`,
                 resourceName: this.virtualNodeName,
@@ -180,7 +179,7 @@ export class VirtualNode extends VirtualNodeBase {
 
     constructor(scope: Construct, id: string, props: VirtualNodeProps) {
         super(scope, id, {
-            physicalName: props.virtualNodeName || cdk.Lazy.string({ produce: () => cdk.Names.uniqueId(this) }),
+            physicalName: props.virtualNodeName || Lazy.string({ produce: () => Names.uniqueId(this) }),
         });
 
         this.mesh = props.mesh;
@@ -194,8 +193,8 @@ export class VirtualNode extends VirtualNodeBase {
             virtualNodeName: this.physicalName,
             meshName: this.mesh.meshName,
             spec: {
-                backends: cdk.Lazy.any({ produce: () => this.backends }, { omitEmptyArray: true }),
-                listeners: cdk.Lazy.any({ produce: () => this.listeners.map(listener => listener.listener) }, { omitEmptyArray: true }),
+                backends: Lazy.any({ produce: () => this.backends }, { omitEmptyArray: true }),
+                listeners: Lazy.any({ produce: () => this.listeners.map(listener => listener.listener) }, { omitEmptyArray: true }),
                 backendDefaults: props.backendDefaults !== undefined
                     ? {
                         clientPolicy: props.backendDefaults?.clientPolicy?.bind(this).clientPolicy,

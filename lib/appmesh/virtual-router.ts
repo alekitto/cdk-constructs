@@ -1,10 +1,9 @@
 import * as cdk from 'aws-cdk-lib';
-import { ArnFormat } from 'aws-cdk-lib';
-import { Construct } from 'constructs';
 import { IMesh, Mesh } from './mesh';
 import { Route, RouteBaseProps } from './route';
+import { CfnVirtualRouter } from 'aws-cdk-lib/aws-appmesh';
+import { Construct } from 'constructs';
 import { VirtualRouterListener } from './virtual-router-listener';
-import { CfnVirtualRouter } from "aws-cdk-lib/aws-appmesh";
 
 /**
  * Interface which all VirtualRouter based classes MUST implement
@@ -74,14 +73,12 @@ abstract class VirtualRouterBase extends cdk.Resource implements IVirtualRouter 
      * Add a single route to the router
      */
     public addRoute(id: string, props: RouteBaseProps): Route {
-        const route = new Route(this, id, {
+        return new Route(this, id, {
             ...props,
             routeName: id,
             mesh: this.mesh,
             virtualRouter: this,
         });
-
-        return route;
     }
 }
 
@@ -102,7 +99,7 @@ export class VirtualRouter extends VirtualRouterBase {
     public static fromVirtualRouterArn(scope: Construct, id: string, virtualRouterArn: string): IVirtualRouter {
         return new class extends VirtualRouterBase {
             readonly virtualRouterArn = virtualRouterArn;
-            private readonly parsedArn = cdk.Fn.split('/', cdk.Stack.of(scope).splitArn(virtualRouterArn, ArnFormat.SLASH_RESOURCE_NAME).resourceName!);
+            private readonly parsedArn = cdk.Fn.split('/', cdk.Stack.of(scope).splitArn(virtualRouterArn, cdk.ArnFormat.SLASH_RESOURCE_NAME).resourceName!);
             readonly virtualRouterName = cdk.Fn.select(2, this.parsedArn);
             readonly mesh = Mesh.fromMeshName(this, 'Mesh', cdk.Fn.select(0, this.parsedArn));
         }(scope, id);

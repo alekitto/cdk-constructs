@@ -1,6 +1,5 @@
-import { aws_acmpca as acmpca } from 'aws-cdk-lib';
+import { aws_acmpca as acmpca, aws_appmesh as appmesh } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { CfnVirtualNode } from "aws-cdk-lib/aws-appmesh";
 
 enum CertificateType {
     ACMPCA = 'acm',
@@ -14,7 +13,7 @@ export interface ClientPolicyConfig {
     /**
      * Represents single Client Policy property
      */
-    readonly clientPolicy: CfnVirtualNode.ClientPolicyProperty;
+    readonly clientPolicy: appmesh.CfnVirtualNode.ClientPolicyProperty;
 }
 
 /**
@@ -79,11 +78,13 @@ class ClientPolicyImpl extends ClientPolicy {
     constructor (private readonly ports: number[] | undefined,
                  private readonly certificateType: CertificateType,
                  private readonly certificateChain: string | undefined,
-                 private readonly certificateAuthorityArns: acmpca.ICertificateAuthority[] | undefined) { super(); }
+                 private readonly certificateAuthorityArns: acmpca.ICertificateAuthority[] | undefined) {
+        super();
+    }
 
     public bind(_scope: Construct): ClientPolicyConfig {
-        if (this.certificateType === CertificateType.ACMPCA && this.certificateAuthorityArns?.map(certificateArn =>
-            certificateArn.certificateAuthorityArn).length === 0) {
+        if (this.certificateType === CertificateType.ACMPCA && 0 === this.certificateAuthorityArns?.map(certificateArn =>
+            certificateArn.certificateAuthorityArn).length) {
             throw new Error('You must provide at least one Certificate Authority when creating an ACM Trust ClientPolicy');
         } else {
             return {

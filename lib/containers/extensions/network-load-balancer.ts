@@ -1,12 +1,12 @@
 import {
-    aws_ecs as ecs,
-    aws_elasticloadbalancingv2 as elb,
     CfnOutput,
     Duration,
+    aws_ecs as ecs,
+    aws_elasticloadbalancingv2 as elb
 } from 'aws-cdk-lib';
-import { ServiceExtension, ServiceBuild } from './extension-interfaces';
-import { Service } from '../service';
+import { ServiceBuild, ServiceExtension } from './extension-interfaces';
 import { Construct } from 'constructs';
+import { Service } from '../service';
 
 interface NetworkLoadBalancerProps {
     /**
@@ -45,8 +45,8 @@ export class NetworkLoadBalancerExtension extends ServiceExtension {
     constructor(private props: NetworkLoadBalancerProps) {
         super('network-load-balancer');
 
-        if (props.listeners.length === 0) {
-            throw new Error("Network load balancer must have at least one listener");
+        if (0 === props.listeners.length) {
+            throw new Error('Network load balancer must have at least one listener');
         }
     }
 
@@ -81,9 +81,9 @@ export class NetworkLoadBalancerExtension extends ServiceExtension {
             ...props,
 
             // Give the task a little bit of grace time to start passing
-            // healthchecks. Without this it is possible for a slow starting task
-            // to cause the ALB to consider the task unhealthy, causing ECS to stop
-            // the task before it actually has a chance to finish starting up
+            // Healthchecks. Without this it is possible for a slow starting task
+            // To cause the ALB to consider the task unhealthy, causing ECS to stop
+            // The task before it actually has a chance to finish starting up
             healthCheckGracePeriod: Duration.minutes(1),
         } as ServiceBuild;
     }
@@ -97,9 +97,9 @@ export class NetworkLoadBalancerExtension extends ServiceExtension {
             .containerName;
 
         this.listeners.forEach((listener, i) => {
-            let protocol = this.props.listeners[i].protocol ?? elb.Protocol.TCP;
+            const protocol = this.props.listeners[i].protocol ?? elb.Protocol.TCP;
             if (protocol !== elb.Protocol.TCP && protocol !== elb.Protocol.UDP) {
-                throw new Error('Invalid protocol: must be TCP or UDP')
+                throw new Error('Invalid protocol: must be TCP or UDP');
             }
 
             const target = service.loadBalancerTarget({
@@ -111,11 +111,11 @@ export class NetworkLoadBalancerExtension extends ServiceExtension {
             (listener as elb.NetworkListener).addTargets(`${this.parentService.id}-${i}`, {
                 deregistrationDelay: Duration.seconds(10),
                 port: this.props.listeners[i].port,
-                targets: [target],
+                targets: [ target ],
                 proxyProtocolV2: this.props.listeners[i].proxyProtocolV2,
                 protocol: this.props.listeners[i].protocol,
                 healthCheck: this.props.listeners[i].healthCheck,
-            })
+            });
         });
     }
 }

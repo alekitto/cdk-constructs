@@ -1,10 +1,12 @@
 import {
     aws_ec2 as ec2,
-    aws_ecs as ecs,
+    aws_ecs as ecs
 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { Service } from '../service';
 import { ServiceExtension } from './extension-interfaces';
+
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 
 /**
  * Setting for the main application container of a service.
@@ -121,8 +123,8 @@ export class Container extends ServiceExtension {
         } as ecs.ContainerDefinitionOptions;
 
         // Let other extensions mutate the container definition. This is
-        // used by extensions which want to add environment variables, modify
-        // logging parameters, etc.
+        // Used by extensions which want to add environment variables, modify
+        // Logging parameters, etc.
         this.containerMutatingHooks.forEach((hookProvider) => {
             containerProps = hookProvider.mutateContainerDefinition(containerProps);
         });
@@ -135,7 +137,7 @@ export class Container extends ServiceExtension {
         }
 
         // Raise the ulimits for this main application container
-        // so that it can handle more concurrent requests
+        // So that it can handle more concurrent requests
         this.container.addUlimits({
             softLimit: 1024000,
             hardLimit: 1024000,

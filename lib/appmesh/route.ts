@@ -1,15 +1,13 @@
-import * as cdk from 'aws-cdk-lib';
-import { ArnFormat } from 'aws-cdk-lib';
+import { ArnFormat, Fn, IResource, Lazy, Names, Resource, Stack, aws_appmesh as appmesh } from 'aws-cdk-lib';
+import { IVirtualRouter, VirtualRouter } from './virtual-router';
 import { Construct } from 'constructs';
 import { IMesh } from './mesh';
 import { RouteSpec } from './route-spec';
-import { IVirtualRouter, VirtualRouter } from './virtual-router';
-import { CfnRoute } from "aws-cdk-lib/aws-appmesh";
 
 /**
  * Interface for which all Route based classes MUST implement
  */
-export interface IRoute extends cdk.IResource {
+export interface IRoute extends IResource {
     /**
      * The name of the route
      *
@@ -67,15 +65,15 @@ export interface RouteProps extends RouteBaseProps {
  *
  * @see https://docs.aws.amazon.com/app-mesh/latest/userguide/routes.html
  */
-export class Route extends cdk.Resource implements IRoute {
+export class Route extends Resource implements IRoute {
     /**
      * Import an existing Route given an ARN
      */
     public static fromRouteArn(scope: Construct, id: string, routeArn: string): IRoute {
-        return new class extends cdk.Resource implements IRoute {
+        return new class extends Resource implements IRoute {
             readonly routeArn = routeArn;
             readonly virtualRouter = VirtualRouter.fromVirtualRouterArn(this, 'VirtualRouter', routeArn);
-            readonly routeName = cdk.Fn.select(4, cdk.Fn.split('/', cdk.Stack.of(scope).splitArn(routeArn, ArnFormat.SLASH_RESOURCE_NAME).resourceName!));
+            readonly routeName = Fn.select(4, Fn.split('/', Stack.of(scope).splitArn(routeArn, ArnFormat.SLASH_RESOURCE_NAME).resourceName!));
         }(scope, id);
     }
 
@@ -83,10 +81,10 @@ export class Route extends cdk.Resource implements IRoute {
      * Import an existing Route given attributes
      */
     public static fromRouteAttributes(scope: Construct, id: string, attrs: RouteAttributes): IRoute {
-        return new class extends cdk.Resource implements IRoute {
+        return new class extends Resource implements IRoute {
             readonly routeName = attrs.routeName;
             readonly virtualRouter = attrs.virtualRouter;
-            readonly routeArn = cdk.Stack.of(this).formatArn({
+            readonly routeArn = Stack.of(this).formatArn({
                 service: 'appmesh',
                 resource: `mesh/${attrs.virtualRouter.mesh.meshName}/virtualRouter/${attrs.virtualRouter.virtualRouterName}/route`,
                 resourceName: this.routeName,
@@ -111,14 +109,14 @@ export class Route extends cdk.Resource implements IRoute {
 
     constructor(scope: Construct, id: string, props: RouteProps) {
         super(scope, id, {
-            physicalName: props.routeName || cdk.Lazy.string({ produce: () => cdk.Names.uniqueId(this) }),
+            physicalName: props.routeName || Lazy.string({ produce: () => Names.uniqueId(this) }),
         });
 
         this.virtualRouter = props.virtualRouter;
 
         const spec = props.routeSpec.bind(this);
 
-        const route = new CfnRoute(this, 'Resource', {
+        const route = new appmesh.CfnRoute(this, 'Resource', {
             routeName: this.physicalName,
             meshName: this.virtualRouter.mesh.meshName,
             virtualRouterName: this.virtualRouter.virtualRouterName,

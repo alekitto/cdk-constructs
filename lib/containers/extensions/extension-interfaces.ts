@@ -1,10 +1,13 @@
 import {
-    aws_ecs as ecs,
     Duration,
+    aws_ecs as ecs
 } from 'aws-cdk-lib';
+import { CapacityProviderStrategy } from 'aws-cdk-lib/lib/aws-ecs/lib/cluster';
 import { Construct } from 'constructs';
 import { Service } from '../service';
-import { CapacityProviderStrategy } from "aws-cdk-lib/lib/aws-ecs/lib/cluster";
+
+/* eslint-disable @typescript-eslint/no-empty-function */
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 
 /**
  * The types of capacity that are supported. These capacity types may change the
@@ -145,7 +148,7 @@ export abstract class ServiceExtension {
     protected scope!: Construct;
 
     // A list of other extensions which want to mutate the
-    // container definition for this extension.
+    // Container definition for this extension.
     protected containerMutatingHooks: ContainerMutatingHook[] = [];
 
     constructor(name: string) {
@@ -156,7 +159,7 @@ export abstract class ServiceExtension {
      * A hook that allows the extension to add hooks to other
      * extensions that are registered.
      */
-    public addHooks() { } // tslint:disable-line
+    public addHooks() { } // Tslint:disable-line
 
     /**
      * This hook allows another service extension to register a mutating hook for

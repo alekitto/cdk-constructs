@@ -1,6 +1,5 @@
-import { aws_certificatemanager as acm } from 'aws-cdk-lib';
+import { aws_certificatemanager as acm, aws_appmesh as appmesh } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { CfnVirtualNode } from "aws-cdk-lib/aws-appmesh";
 
 /**
  * A wrapper for the tls config returned by {@link TlsCertificate.bind}
@@ -9,7 +8,7 @@ export interface TlsCertificateConfig {
     /**
      * The CFN shape for a TLS certificate
      */
-    readonly tlsCertificate: CfnVirtualNode.ListenerTlsCertificateProperty,
+    readonly tlsCertificate: appmesh.CfnVirtualNode.ListenerTlsCertificateProperty,
 }
 
 /**

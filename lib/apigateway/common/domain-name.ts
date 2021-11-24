@@ -1,4 +1,4 @@
-import { aws_apigatewayv2 as apigatewayv2, aws_certificatemanager as acm, IResource, Resource, Token } from 'aws-cdk-lib';
+import { IResource, Resource, Token, aws_certificatemanager as acm, aws_apigatewayv2 as apigatewayv2 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 
 /**
@@ -26,11 +26,11 @@ export interface IDomainName extends IResource {
 }
 
 /**
- * custom domain name attributes
+ * Custom domain name attributes
  */
 export interface DomainNameAttributes {
   /**
-   * domain name string
+   * Domain name string
    */
   readonly name: string;
 
@@ -46,7 +46,7 @@ export interface DomainNameAttributes {
 }
 
 /**
- * properties used for creating the DomainName
+ * Properties used for creating the DomainName
  */
 export interface DomainNameProps {
   /**
@@ -63,41 +63,41 @@ export interface DomainNameProps {
  * Custom domain resource for the API
  */
 export class DomainName extends Resource implements IDomainName {
-  /**
+    /**
    * Import from attributes
    */
-  public static fromDomainNameAttributes(scope: Construct, id: string, attrs: DomainNameAttributes): IDomainName {
-    class Import extends Resource implements IDomainName {
+    public static fromDomainNameAttributes(scope: Construct, id: string, attrs: DomainNameAttributes): IDomainName {
+        class Import extends Resource implements IDomainName {
       public readonly regionalDomainName = attrs.regionalDomainName;
       public readonly regionalHostedZoneId = attrs.regionalHostedZoneId;
       public readonly name = attrs.name;
+        }
+        return new Import(scope, id);
     }
-    return new Import(scope, id);
-  }
 
   public readonly name: string;
   public readonly regionalDomainName: string;
   public readonly regionalHostedZoneId: string;
 
   constructor(scope: Construct, id: string, props: DomainNameProps) {
-    super(scope, id);
+      super(scope, id);
 
-    if (props.domainName === '') {
-      throw new Error('empty string for domainName not allowed');
-    }
+      if ('' === props.domainName) {
+          throw new Error('empty string for domainName not allowed');
+      }
 
-    const domainNameProps: apigatewayv2.CfnDomainNameProps = {
-      domainName: props.domainName,
-      domainNameConfigurations: [
-        {
-          certificateArn: props.certificate.certificateArn,
-          endpointType: 'REGIONAL',
-        },
-      ],
-    };
-    const resource = new apigatewayv2.CfnDomainName(this, 'Resource', domainNameProps);
-    this.name = resource.ref;
-    this.regionalDomainName = Token.asString(resource.getAtt('RegionalDomainName'));
-    this.regionalHostedZoneId = Token.asString(resource.getAtt('RegionalHostedZoneId'));
+      const domainNameProps: apigatewayv2.CfnDomainNameProps = {
+          domainName: props.domainName,
+          domainNameConfigurations: [
+              {
+                  certificateArn: props.certificate.certificateArn,
+                  endpointType: 'REGIONAL',
+              },
+          ],
+      };
+      const resource = new apigatewayv2.CfnDomainName(this, 'Resource', domainNameProps);
+      this.name = resource.ref;
+      this.regionalDomainName = Token.asString(resource.getAtt('RegionalDomainName'));
+      this.regionalHostedZoneId = Token.asString(resource.getAtt('RegionalHostedZoneId'));
   }
 }

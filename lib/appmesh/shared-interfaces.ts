@@ -1,8 +1,7 @@
-import * as cdk from 'aws-cdk-lib';
-import { Construct } from 'constructs';
+import { Duration, aws_appmesh as appmesh } from 'aws-cdk-lib';
 import { ClientPolicy } from './client-policy';
+import { Construct } from 'constructs';
 import { IVirtualService } from './virtual-service';
-import { CfnVirtualGateway, CfnVirtualNode } from "aws-cdk-lib/aws-appmesh";
 
 /**
  * Represents timeouts for HTTP protocols.
@@ -13,14 +12,14 @@ export interface HttpTimeout {
      *
      * @default - none
      */
-    readonly idle?: cdk.Duration;
+    readonly idle?: Duration;
 
     /**
      * Represents per request timeout.
      *
      * @default - 15 s
      */
-    readonly perRequest?: cdk.Duration;
+    readonly perRequest?: Duration;
 }
 
 /**
@@ -32,14 +31,14 @@ export interface GrpcTimeout {
      *
      * @default - none
      */
-    readonly idle?: cdk.Duration;
+    readonly idle?: Duration;
 
     /**
      * Represents per request timeout.
      *
      * @default - 15 s
      */
-    readonly perRequest?: cdk.Duration;
+    readonly perRequest?: Duration;
 }
 
 /**
@@ -51,13 +50,13 @@ export interface TcpTimeout {
      *
      * @default - none
      */
-    readonly idle?: cdk.Duration;
+    readonly idle?: Duration;
 }
 
 /**
  * Enum of supported AppMesh protocols
  *
- * @deprecated not for use outside package
+ * @internal not for use outside package
  */
 export enum Protocol {
     HTTP = 'http',
@@ -73,12 +72,12 @@ export interface OutlierDetection {
     /**
      * The base amount of time for which a host is ejected.
      */
-    readonly baseEjectionDuration: cdk.Duration;
+    readonly baseEjectionDuration: Duration;
 
     /**
      * The time interval between ejection sweep analysis.
      */
-    readonly interval: cdk.Duration;
+    readonly interval: Duration;
 
     /**
      * Maximum percentage of hosts in load balancing pool for upstream service that can be ejected. Will eject at
@@ -102,14 +101,14 @@ export interface AccessLogConfig {
      *
      * @default - no access logging
      */
-    readonly virtualNodeAccessLog?: CfnVirtualNode.AccessLogProperty;
+    readonly virtualNodeAccessLog?: appmesh.CfnVirtualNode.AccessLogProperty;
 
     /**
      * VirtualGateway CFN configuration for Access Logging
      *
      * @default - no access logging
      */
-    readonly virtualGatewayAccessLog?: CfnVirtualGateway.VirtualGatewayAccessLogProperty;
+    readonly virtualGatewayAccessLog?: appmesh.CfnVirtualGateway.VirtualGatewayAccessLogProperty;
 }
 
 /**
@@ -196,7 +195,7 @@ export interface BackendConfig {
     /**
      * Config for a Virtual Service backend
      */
-    readonly virtualServiceBackend: CfnVirtualNode.BackendProperty;
+    readonly virtualServiceBackend: appmesh.CfnVirtualNode.BackendProperty;
 }
 
 

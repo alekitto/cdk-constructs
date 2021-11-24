@@ -1,10 +1,8 @@
 import * as cdk from 'aws-cdk-lib';
-import { ArnFormat } from 'aws-cdk-lib';
-import { Construct } from 'constructs';
 import { IMesh, Mesh } from './mesh';
+import { Construct } from 'constructs';
 import { IVirtualNode } from './virtual-node';
 import { IVirtualRouter } from './virtual-router';
-import { CfnVirtualService } from "aws-cdk-lib/aws-appmesh";
 
 /**
  * Represents the interface which all VirtualService based classes MUST implement
@@ -65,7 +63,7 @@ export class VirtualService extends cdk.Resource implements IVirtualService {
     public static fromVirtualServiceArn(scope: Construct, id: string, virtualServiceArn: string): IVirtualService {
         return new class extends cdk.Resource implements IVirtualService {
             readonly virtualServiceArn = virtualServiceArn;
-            private readonly parsedArn = cdk.Fn.split('/', cdk.Stack.of(scope).splitArn(virtualServiceArn, ArnFormat.SLASH_RESOURCE_NAME).resourceName!);
+            private readonly parsedArn = cdk.Fn.split('/', cdk.Stack.of(scope).splitArn(virtualServiceArn, cdk.ArnFormat.SLASH_RESOURCE_NAME).resourceName!);
             readonly virtualServiceName = cdk.Fn.select(2, this.parsedArn);
             readonly mesh = Mesh.fromMeshName(this, 'Mesh', cdk.Fn.select(0, this.parsedArn));
         }(scope, id);
@@ -109,7 +107,7 @@ export class VirtualService extends cdk.Resource implements IVirtualService {
         const providerConfig = props.virtualServiceProvider.bind(this);
         this.mesh = providerConfig.mesh;
 
-        const svc = new CfnVirtualService(this, 'Resource', {
+        const svc = new cdk.aws_appmesh.CfnVirtualService(this, 'Resource', {
             meshName: this.mesh.meshName,
             virtualServiceName: this.physicalName,
             spec: {
@@ -155,14 +153,14 @@ export interface VirtualServiceProviderConfig {
      *
      * @default - none
      */
-    readonly virtualNodeProvider?: CfnVirtualService.VirtualNodeServiceProviderProperty;
+    readonly virtualNodeProvider?: cdk.aws_appmesh.CfnVirtualService.VirtualNodeServiceProviderProperty;
 
     /**
      * Virtual Router based provider
      *
      * @default - none
      */
-    readonly virtualRouterProvider?: CfnVirtualService.VirtualRouterServiceProviderProperty;
+    readonly virtualRouterProvider?: cdk.aws_appmesh.CfnVirtualService.VirtualRouterServiceProviderProperty;
 
     /**
      * Mesh the Provider is using

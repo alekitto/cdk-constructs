@@ -1,16 +1,15 @@
-import * as cdk from 'aws-cdk-lib';
-import { ArnFormat, aws_iam as iam } from 'aws-cdk-lib';
-import { Construct } from 'constructs';
+import { AccessLog, BackendDefaults } from './shared-interfaces';
+import { ArnFormat, Fn, IResource, Lazy, Names, Resource, Stack, aws_iam as iam } from 'aws-cdk-lib';
 import { GatewayRoute, GatewayRouteBaseProps } from './gateway-route';
 import { IMesh, Mesh } from './mesh';
-import { AccessLog, BackendDefaults } from './shared-interfaces';
 import { VirtualGatewayListener, VirtualGatewayListenerConfig } from './virtual-gateway-listener';
-import { CfnVirtualGateway } from "aws-cdk-lib/aws-appmesh";
+import { CfnVirtualGateway } from 'aws-cdk-lib/aws-appmesh';
+import { Construct } from 'constructs';
 
 /**
  * Interface which all Virtual Gateway based classes must implement
  */
-export interface IVirtualGateway extends cdk.IResource {
+export interface IVirtualGateway extends IResource {
     /**
      * Name of the VirtualGateway
      *
@@ -84,7 +83,7 @@ export interface VirtualGatewayProps extends VirtualGatewayBaseProps {
     readonly mesh: IMesh;
 }
 
-abstract class VirtualGatewayBase extends cdk.Resource implements IVirtualGateway {
+abstract class VirtualGatewayBase extends Resource implements IVirtualGateway {
     /**
      * Name of the VirtualGateway
      */
@@ -113,8 +112,8 @@ abstract class VirtualGatewayBase extends cdk.Resource implements IVirtualGatewa
     public grantStreamAggregatedResources(identity: iam.IGrantable): iam.Grant {
         return iam.Grant.addToPrincipal({
             grantee: identity,
-            actions: ['appmesh:StreamAggregatedResources'],
-            resourceArns: [this.virtualGatewayArn],
+            actions: [ 'appmesh:StreamAggregatedResources' ],
+            resourceArns: [ this.virtualGatewayArn ],
         });
     }
 }
@@ -133,10 +132,10 @@ export class VirtualGateway extends VirtualGatewayBase {
      */
     public static fromVirtualGatewayArn(scope: Construct, id: string, virtualGatewayArn: string): IVirtualGateway {
         return new class extends VirtualGatewayBase {
-            private readonly parsedArn = cdk.Fn.split('/', cdk.Stack.of(scope).splitArn(virtualGatewayArn, ArnFormat.SLASH_RESOURCE_NAME).resourceName!);
-            readonly mesh = Mesh.fromMeshName(this, 'Mesh', cdk.Fn.select(0, this.parsedArn));
+            private readonly parsedArn = Fn.split('/', Stack.of(scope).splitArn(virtualGatewayArn, ArnFormat.SLASH_RESOURCE_NAME).resourceName!);
+            readonly mesh = Mesh.fromMeshName(this, 'Mesh', Fn.select(0, this.parsedArn));
             readonly virtualGatewayArn = virtualGatewayArn;
-            readonly virtualGatewayName = cdk.Fn.select(2, this.parsedArn);
+            readonly virtualGatewayName = Fn.select(2, this.parsedArn);
         }(scope, id);
     }
 
@@ -147,7 +146,7 @@ export class VirtualGateway extends VirtualGatewayBase {
         return new class extends VirtualGatewayBase {
             readonly mesh = attrs.mesh;
             readonly virtualGatewayName = attrs.virtualGatewayName;
-            readonly virtualGatewayArn = cdk.Stack.of(this).formatArn({
+            readonly virtualGatewayArn = Stack.of(this).formatArn({
                 service: 'appmesh',
                 resource: `mesh/${attrs.mesh.meshName}/virtualGateway`,
                 resourceName: this.virtualGatewayName,
@@ -174,7 +173,7 @@ export class VirtualGateway extends VirtualGatewayBase {
 
     constructor(scope: Construct, id: string, props: VirtualGatewayProps) {
         super(scope, id, {
-            physicalName: props.virtualGatewayName || cdk.Lazy.string({ produce: () => cdk.Names.uniqueId(this) }),
+            physicalName: props.virtualGatewayName || Lazy.string({ produce: () => Names.uniqueId(this) }),
         });
 
         this.mesh = props.mesh;

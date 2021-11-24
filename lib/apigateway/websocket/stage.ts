@@ -1,8 +1,8 @@
-import { aws_apigatewayv2 as apigatewayv2, Stack } from 'aws-cdk-lib';
+import { IApi, IStage, StageAttributes, StageOptions } from '../common';
+import { Stack, aws_apigatewayv2 as apigatewayv2 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { StageOptions, IApi, IStage, StageAttributes } from '../common';
-import { StageBase } from '../common/base';
 import { IWebSocketApi } from './api';
+import { StageBase } from '../common/base';
 
 /**
  * Represents the WebSocketStage
@@ -52,65 +52,65 @@ export interface WebSocketStageAttributes extends StageAttributes {
  * @resource AWS::ApiGatewayV2::Stage
  */
 export class WebSocketStage extends StageBase implements IWebSocketStage {
-  /**
+    /**
    * Import an existing stage into this CDK app.
    */
-  public static fromWebSocketStageAttributes(scope: Construct, id: string, attrs: WebSocketStageAttributes): IWebSocketStage {
-    class Import extends StageBase implements IWebSocketStage {
+    public static fromWebSocketStageAttributes(scope: Construct, id: string, attrs: WebSocketStageAttributes): IWebSocketStage {
+        class Import extends StageBase implements IWebSocketStage {
       public readonly baseApi = attrs.api;
       public readonly stageName = attrs.stageName;
       public readonly api = attrs.api;
 
       get url(): string {
-        throw new Error('url is not available for imported stages.');
+          throw new Error('url is not available for imported stages.');
       }
 
       get callbackUrl(): string {
-        throw new Error('callback url is not available for imported stages.');
+          throw new Error('callback url is not available for imported stages.');
       }
+        }
+        return new Import(scope, id);
     }
-    return new Import(scope, id);
-  }
 
   protected readonly baseApi: IApi;
   public readonly stageName: string;
   public readonly api: IWebSocketApi;
 
   constructor(scope: Construct, id: string, props: WebSocketStageProps) {
-    super(scope, id, {
-      physicalName: props.stageName,
-    });
+      super(scope, id, {
+          physicalName: props.stageName,
+      });
 
-    this.baseApi = props.webSocketApi;
-    this.api = props.webSocketApi;
-    this.stageName = this.physicalName;
+      this.baseApi = props.webSocketApi;
+      this.api = props.webSocketApi;
+      this.stageName = this.physicalName;
 
-    new apigatewayv2.CfnStage(this, 'Resource', {
-      apiId: props.webSocketApi.apiId,
-      stageName: this.physicalName,
-      autoDeploy: props.autoDeploy,
-    });
+      new apigatewayv2.CfnStage(this, 'Resource', {
+          apiId: props.webSocketApi.apiId,
+          stageName: this.physicalName,
+          autoDeploy: props.autoDeploy,
+      });
 
-    if (props.domainMapping) {
-      this._addDomainMapping(props.domainMapping);
-    }
+      if (props.domainMapping) {
+          this._addDomainMapping(props.domainMapping);
+      }
   }
 
   /**
    * The websocket URL to this stage.
    */
   public get url(): string {
-    const s = Stack.of(this);
-    const urlPath = this.stageName;
-    return `wss://${this.api.apiId}.execute-api.${s.region}.${s.urlSuffix}/${urlPath}`;
+      const s = Stack.of(this);
+      const urlPath = this.stageName;
+      return `wss://${this.api.apiId}.execute-api.${s.region}.${s.urlSuffix}/${urlPath}`;
   }
 
   /**
    * The callback URL to this stage.
    */
   public get callbackUrl(): string {
-    const s = Stack.of(this);
-    const urlPath = this.stageName;
-    return `https://${this.api.apiId}.execute-api.${s.region}.${s.urlSuffix}/${urlPath}`;
+      const s = Stack.of(this);
+      const urlPath = this.stageName;
+      return `https://${this.api.apiId}.execute-api.${s.region}.${s.urlSuffix}/${urlPath}`;
   }
 }

@@ -1,9 +1,9 @@
-import { aws_apigatewayv2 as apigatewayv2, Resource } from 'aws-cdk-lib';
+import { Resource, aws_apigatewayv2 as apigatewayv2 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { IRoute } from '../common';
 import { IHttpApi } from './api';
 import { IHttpRouteAuthorizer } from './authorizer';
 import { IHttpRouteIntegration } from './integration';
+import { IRoute } from '../common';
 
 /**
  * Represents a Route for an HTTP API.
@@ -57,10 +57,10 @@ export class HttpRouteKey {
    * @param method default is 'ANY'
    */
   public static with(path: string, method?: HttpMethod) {
-    if (path !== '/' && (!path.startsWith('/') || path.endsWith('/'))) {
-      throw new Error('A route path must always start with a "/" and not end with a "/"');
-    }
-    return new HttpRouteKey(`${method ?? HttpMethod.ANY} ${path}`, path);
+      if ('/' !== path && (!path.startsWith('/') || path.endsWith('/'))) {
+          throw new Error('A route path must always start with a "/" and not end with a "/"');
+      }
+      return new HttpRouteKey(`${method ?? HttpMethod.ANY} ${path}`, path);
   }
 
   /**
@@ -74,8 +74,8 @@ export class HttpRouteKey {
   public readonly path?: string;
 
   private constructor(key: string, path?: string) {
-    this.key = key;
-    this.path = path;
+      this.key = key;
+      this.path = path;
   }
 }
 
@@ -95,7 +95,7 @@ export interface BatchHttpRouteOptions {
  */
 export interface HttpRouteProps extends BatchHttpRouteOptions {
   /**
-   * the API the route is associated with
+   * The API the route is associated with
    */
   readonly httpApi: IHttpApi;
 
@@ -143,50 +143,50 @@ export class HttpRoute extends Resource implements IHttpRoute {
   public readonly path?: string;
 
   constructor(scope: Construct, id: string, props: HttpRouteProps) {
-    super(scope, id);
+      super(scope, id);
 
-    this.httpApi = props.httpApi;
-    this.path = props.routeKey.path;
+      this.httpApi = props.httpApi;
+      this.path = props.routeKey.path;
 
-    const config = props.integration.bind({
-      route: this,
-      scope: this,
-    });
+      const config = props.integration.bind({
+          route: this,
+          scope: this,
+      });
 
-    const integration = props.httpApi._addIntegration(this, config);
+      const integration = props.httpApi._addIntegration(this, config);
 
-    const authBindResult = props.authorizer ? props.authorizer.bind({
-      route: this,
-      scope: this.httpApi instanceof Construct ? this.httpApi : this, // scope under the API if it's not imported
-    }) : undefined;
+      const authBindResult = props.authorizer ? props.authorizer.bind({
+          route: this,
+          scope: this.httpApi instanceof Construct ? this.httpApi : this, // Scope under the API if it's not imported
+      }) : undefined;
 
-    if (authBindResult && !(authBindResult.authorizationType in HttpRouteAuthorizationType)) {
-      throw new Error('authorizationType should either be JWT, CUSTOM, or NONE');
-    }
+      if (authBindResult && !(authBindResult.authorizationType in HttpRouteAuthorizationType)) {
+          throw new Error('authorizationType should either be JWT, CUSTOM, or NONE');
+      }
 
-    let authorizationScopes = authBindResult?.authorizationScopes;
+      let authorizationScopes = authBindResult?.authorizationScopes;
 
-    if (authBindResult && props.authorizationScopes) {
-      authorizationScopes = Array.from(new Set([
-        ...authorizationScopes ?? [],
-        ...props.authorizationScopes,
-      ]));
-    }
+      if (authBindResult && props.authorizationScopes) {
+          authorizationScopes = Array.from(new Set([
+              ...authorizationScopes ?? [],
+              ...props.authorizationScopes,
+          ]));
+      }
 
-    if (authorizationScopes?.length === 0) {
-      authorizationScopes = undefined;
-    }
+      if (0 === authorizationScopes?.length) {
+          authorizationScopes = undefined;
+      }
 
-    const routeProps: apigatewayv2.CfnRouteProps = {
-      apiId: props.httpApi.apiId,
-      routeKey: props.routeKey.key,
-      target: `integrations/${integration.integrationId}`,
-      authorizerId: authBindResult?.authorizerId,
-      authorizationType: authBindResult?.authorizationType ?? 'NONE', // must be explicitly NONE (not undefined) for stack updates to work correctly
-      authorizationScopes,
-    };
+      const routeProps: apigatewayv2.CfnRouteProps = {
+          apiId: props.httpApi.apiId,
+          routeKey: props.routeKey.key,
+          target: `integrations/${integration.integrationId}`,
+          authorizerId: authBindResult?.authorizerId,
+          authorizationType: authBindResult?.authorizationType ?? 'NONE', // Must be explicitly NONE (not undefined) for stack updates to work correctly
+          authorizationScopes,
+      };
 
-    const route = new apigatewayv2.CfnRoute(this, 'Resource', routeProps);
-    this.routeId = route.ref;
+      const route = new apigatewayv2.CfnRoute(this, 'Resource', routeProps);
+      this.routeId = route.ref;
   }
 }

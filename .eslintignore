@@ -1,2 +1,3 @@
 lib/**/*.js
+lib/**/*.d.ts
 !lib/tasks/database-backup/code/**/*.js

@@ -1,6 +1,6 @@
-import { CfnVirtualRouter } from "aws-cdk-lib/aws-appmesh";
 import { Construct } from 'constructs';
 import { Protocol } from './shared-interfaces';
+import { aws_appmesh as appmesh } from 'aws-cdk-lib';
 
 /**
  * Properties for a VirtualRouter listener
@@ -9,7 +9,7 @@ export interface VirtualRouterListenerConfig {
     /**
      * Single listener config for a VirtualRouter
      */
-    readonly listener: CfnVirtualRouter.VirtualRouterListenerProperty;
+    readonly listener: appmesh.CfnVirtualRouter.VirtualRouterListenerProperty;
 }
 
 /**

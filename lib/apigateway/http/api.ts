@@ -1,12 +1,12 @@
-import { aws_apigatewayv2 as apigatewayv2, aws_cloudwatch as cloudwatch, Duration } from 'aws-cdk-lib';
-import { Construct } from 'constructs';
-import { IApi, DomainMappingOptions } from '../common';
-import { ApiBase } from '../common/base';
-import { IHttpRouteAuthorizer } from './authorizer';
-import { IHttpRouteIntegration, HttpIntegration, HttpRouteIntegrationConfig } from './integration';
 import { BatchHttpRouteOptions, HttpMethod, HttpRoute, HttpRouteKey } from './route';
-import { IHttpStage, HttpStage, HttpStageOptions } from './stage';
+import { DomainMappingOptions, IApi } from '../common';
+import { Duration, aws_apigatewayv2 as apigatewayv2, aws_cloudwatch as cloudwatch } from 'aws-cdk-lib';
+import { HttpIntegration, HttpRouteIntegrationConfig, IHttpRouteIntegration } from './integration';
+import { HttpStage, HttpStageOptions, IHttpStage } from './stage';
 import { VpcLink, VpcLinkProps } from './vpc-link';
+import { ApiBase } from '../common/base';
+import { Construct } from 'constructs';
+import { IHttpRouteAuthorizer } from './authorizer';
 
 /**
  * Represents an HTTP API
@@ -240,7 +240,7 @@ export interface AddRoutesOptions extends BatchHttpRouteOptions {
   readonly authorizationScopes?: string[];
 }
 
-abstract class HttpApiBase extends ApiBase implements IHttpApi { // note that this is not exported
+abstract class HttpApiBase extends ApiBase implements IHttpApi { // Note that this is not exported
 
   public abstract readonly apiId: string;
   public abstract readonly httpApiId: string;
@@ -248,65 +248,65 @@ abstract class HttpApiBase extends ApiBase implements IHttpApi { // note that th
   private vpcLinks: Record<string, VpcLink> = {};
 
   public metricClientError(props?: cloudwatch.MetricOptions): cloudwatch.Metric {
-    return this.metric('4xx', { statistic: 'Sum', ...props });
+      return this.metric('4xx', { statistic: 'Sum', ...props });
   }
 
   public metricServerError(props?: cloudwatch.MetricOptions): cloudwatch.Metric {
-    return this.metric('5xx', { statistic: 'Sum', ...props });
+      return this.metric('5xx', { statistic: 'Sum', ...props });
   }
 
   public metricDataProcessed(props?: cloudwatch.MetricOptions): cloudwatch.Metric {
-    return this.metric('DataProcessed', { statistic: 'Sum', ...props });
+      return this.metric('DataProcessed', { statistic: 'Sum', ...props });
   }
 
   public metricCount(props?: cloudwatch.MetricOptions): cloudwatch.Metric {
-    return this.metric('Count', { statistic: 'SampleCount', ...props });
+      return this.metric('Count', { statistic: 'SampleCount', ...props });
   }
 
   public metricIntegrationLatency(props?: cloudwatch.MetricOptions): cloudwatch.Metric {
-    return this.metric('IntegrationLatency', props);
+      return this.metric('IntegrationLatency', props);
   }
 
   public metricLatency(props?: cloudwatch.MetricOptions): cloudwatch.Metric {
-    return this.metric('Latency', props);
+      return this.metric('Latency', props);
   }
 
   public addVpcLink(options: VpcLinkProps): VpcLink {
-    const { vpcId } = options.vpc;
-    if (vpcId in this.vpcLinks) {
-      return this.vpcLinks[vpcId];
-    }
+      const { vpcId } = options.vpc;
+      if (vpcId in this.vpcLinks) {
+          return this.vpcLinks[vpcId];
+      }
 
-    const count = Object.keys(this.vpcLinks).length + 1;
-    const vpcLink = new VpcLink(this, `VpcLink-${count}`, options);
-    this.vpcLinks[vpcId] = vpcLink;
+      const count = Object.keys(this.vpcLinks).length + 1;
+      const vpcLink = new VpcLink(this, `VpcLink-${count}`, options);
+      this.vpcLinks[vpcId] = vpcLink;
 
-    return vpcLink;
+      return vpcLink;
   }
 
   /**
    * @internal
    */
   public _addIntegration(scope: Construct, config: HttpRouteIntegrationConfig): HttpIntegration {
-    const { configHash, integration: existingIntegration } = this._integrationCache.getIntegration(scope, config);
-    if (existingIntegration) {
-      return existingIntegration as HttpIntegration;
-    }
+      const { configHash, integration: existingIntegration } = this._integrationCache.getIntegration(scope, config);
+      if (existingIntegration) {
+          return existingIntegration as HttpIntegration;
+      }
 
-    const integration = new HttpIntegration(scope, `HttpIntegration-${configHash}`, {
-      httpApi: this,
-      integrationType: config.type,
-      integrationUri: config.uri,
-      method: config.method,
-      connectionId: config.connectionId,
-      connectionType: config.connectionType,
-      payloadFormatVersion: config.payloadFormatVersion,
-      secureServerName: config.secureServerName,
-      parameterMapping: config.parameterMapping,
-    });
-    this._integrationCache.saveIntegration(scope, config, integration);
+      const integration = new HttpIntegration(scope, `HttpIntegration-${configHash}`, {
+          httpApi: this,
+          integrationType: config.type,
+          integrationUri: config.uri,
+          method: config.method,
+          connectionId: config.connectionId,
+          connectionType: config.connectionType,
+          payloadFormatVersion: config.payloadFormatVersion,
+          secureServerName: config.secureServerName,
+          parameterMapping: config.parameterMapping,
+      });
+      this._integrationCache.saveIntegration(scope, config, integration);
 
-    return integration;
+      return integration;
   }
 }
 
@@ -330,24 +330,24 @@ export interface HttpApiAttributes {
  * @resource AWS::ApiGatewayV2::Api
  */
 export class HttpApi extends HttpApiBase {
-  /**
+    /**
    * Import an existing HTTP API into this CDK app.
    */
-  public static fromHttpApiAttributes(scope: Construct, id: string, attrs: HttpApiAttributes): IHttpApi {
-    class Import extends HttpApiBase {
+    public static fromHttpApiAttributes(scope: Construct, id: string, attrs: HttpApiAttributes): IHttpApi {
+        class Import extends HttpApiBase {
       public readonly apiId = attrs.httpApiId;
       public readonly httpApiId = attrs.httpApiId;
       private readonly _apiEndpoint = attrs.apiEndpoint;
 
       public get apiEndpoint(): string {
-        if (!this._apiEndpoint) {
-          throw new Error('apiEndpoint is not configured on the imported HttpApi.');
-        }
-        return this._apiEndpoint;
+          if (!this._apiEndpoint) {
+              throw new Error('apiEndpoint is not configured on the imported HttpApi.');
+          }
+          return this._apiEndpoint;
       }
+        }
+        return new Import(scope, id);
     }
-    return new Import(scope, id);
-  }
 
   /**
    * A human friendly name for this HTTP API. Note that this is different from `httpApiId`.
@@ -372,87 +372,87 @@ export class HttpApi extends HttpApiBase {
   private readonly defaultAuthorizationScopes?: string[];
 
   constructor(scope: Construct, id: string, props?: HttpApiProps) {
-    super(scope, id);
+      super(scope, id);
 
-    this.httpApiName = props?.apiName ?? id;
-    this.disableExecuteApiEndpoint = props?.disableExecuteApiEndpoint;
+      this.httpApiName = props?.apiName ?? id;
+      this.disableExecuteApiEndpoint = props?.disableExecuteApiEndpoint;
 
-    let corsConfiguration: apigatewayv2.CfnApi.CorsProperty | undefined;
-    if (props?.corsPreflight) {
-      const cors = props.corsPreflight;
-      if (cors.allowOrigins && cors.allowOrigins.includes('*') && cors.allowCredentials) {
-        throw new Error("CORS preflight - allowCredentials is not supported when allowOrigin is '*'");
+      let corsConfiguration: apigatewayv2.CfnApi.CorsProperty | undefined;
+      if (props?.corsPreflight) {
+          const cors = props.corsPreflight;
+          if (cors.allowOrigins && cors.allowOrigins.includes('*') && cors.allowCredentials) {
+              throw new Error('CORS preflight - allowCredentials is not supported when allowOrigin is \'*\'');
+          }
+          const {
+              allowCredentials,
+              allowHeaders,
+              allowMethods,
+              allowOrigins,
+              exposeHeaders,
+              maxAge,
+          } = props.corsPreflight;
+          corsConfiguration = {
+              allowCredentials,
+              allowHeaders,
+              allowMethods,
+              allowOrigins,
+              exposeHeaders,
+              maxAge: maxAge?.toSeconds(),
+          };
       }
-      const {
-        allowCredentials,
-        allowHeaders,
-        allowMethods,
-        allowOrigins,
-        exposeHeaders,
-        maxAge,
-      } = props.corsPreflight;
-      corsConfiguration = {
-        allowCredentials,
-        allowHeaders,
-        allowMethods,
-        allowOrigins,
-        exposeHeaders,
-        maxAge: maxAge?.toSeconds(),
+
+      const apiProps: apigatewayv2.CfnApiProps = {
+          name: this.httpApiName,
+          protocolType: 'HTTP',
+          corsConfiguration,
+          description: props?.description,
+          disableExecuteApiEndpoint: this.disableExecuteApiEndpoint,
       };
-    }
 
-    const apiProps: apigatewayv2.CfnApiProps = {
-      name: this.httpApiName,
-      protocolType: 'HTTP',
-      corsConfiguration,
-      description: props?.description,
-      disableExecuteApiEndpoint: this.disableExecuteApiEndpoint,
-    };
+      const resource = new apigatewayv2.CfnApi(this, 'Resource', apiProps);
+      this.apiId = resource.ref;
+      this.httpApiId = resource.ref;
+      this._apiEndpoint = resource.attrApiEndpoint;
+      this.defaultAuthorizer = props?.defaultAuthorizer;
+      this.defaultAuthorizationScopes = props?.defaultAuthorizationScopes;
 
-    const resource = new apigatewayv2.CfnApi(this, 'Resource', apiProps);
-    this.apiId = resource.ref;
-    this.httpApiId = resource.ref;
-    this._apiEndpoint = resource.attrApiEndpoint;
-    this.defaultAuthorizer = props?.defaultAuthorizer;
-    this.defaultAuthorizationScopes = props?.defaultAuthorizationScopes;
-
-    if (props?.defaultIntegration) {
-      new HttpRoute(this, 'DefaultRoute', {
-        httpApi: this,
-        routeKey: HttpRouteKey.DEFAULT,
-        integration: props.defaultIntegration,
-        authorizer: props.defaultAuthorizer,
-        authorizationScopes: props.defaultAuthorizationScopes,
-      });
-    }
-
-    if (props?.createDefaultStage === undefined || props.createDefaultStage === true) {
-      this.defaultStage = new HttpStage(this, 'DefaultStage', {
-        httpApi: this,
-        autoDeploy: true,
-        domainMapping: props?.defaultDomainMapping,
-      });
-
-      // to ensure the domain is ready before creating the default stage
-      if (props?.defaultDomainMapping) {
-        this.defaultStage.node.addDependency(props.defaultDomainMapping.domainName);
+      if (props?.defaultIntegration) {
+          new HttpRoute(this, 'DefaultRoute', {
+              httpApi: this,
+              routeKey: HttpRouteKey.DEFAULT,
+              integration: props.defaultIntegration,
+              authorizer: props.defaultAuthorizer,
+              authorizationScopes: props.defaultAuthorizationScopes,
+          });
       }
-    }
 
-    if (props?.createDefaultStage === false && props.defaultDomainMapping) {
-      throw new Error('defaultDomainMapping not supported with createDefaultStage disabled',
-      );
-    }
+      if (props?.createDefaultStage === undefined || true === props.createDefaultStage) {
+          this.defaultStage = new HttpStage(this, 'DefaultStage', {
+              httpApi: this,
+              autoDeploy: true,
+              domainMapping: props?.defaultDomainMapping,
+          });
+
+          // To ensure the domain is ready before creating the default stage
+          if (props?.defaultDomainMapping) {
+              this.defaultStage.node.addDependency(props.defaultDomainMapping.domainName);
+          }
+      }
+
+      if (false === props?.createDefaultStage && props.defaultDomainMapping) {
+          throw new Error('defaultDomainMapping not supported with createDefaultStage disabled',
+          );
+      }
   }
 
   /**
    * Get the default endpoint for this API.
    */
   public get apiEndpoint(): string {
-    if (this.disableExecuteApiEndpoint) {
-      throw new Error('apiEndpoint is not accessible when disableExecuteApiEndpoint is set to true.');
-    }
-    return this._apiEndpoint;
+      if (this.disableExecuteApiEndpoint) {
+          throw new Error('apiEndpoint is not accessible when disableExecuteApiEndpoint is set to true.');
+      }
+      return this._apiEndpoint;
   }
 
   /**
@@ -460,18 +460,18 @@ export class HttpApi extends HttpApiBase {
    * Returns `undefined` if `createDefaultStage` is unset.
    */
   public get url(): string | undefined {
-    return this.defaultStage ? this.defaultStage.url : undefined;
+      return this.defaultStage ? this.defaultStage.url : undefined;
   }
 
   /**
    * Add a new stage.
    */
   public addStage(id: string, options: HttpStageOptions): HttpStage {
-    const stage = new HttpStage(this, id, {
-      httpApi: this,
-      ...options,
-    });
-    return stage;
+      const stage = new HttpStage(this, id, {
+          httpApi: this,
+          ...options,
+      });
+      return stage;
   }
 
   /**
@@ -479,17 +479,17 @@ export class HttpApi extends HttpApiBase {
    * methods.
    */
   public addRoutes(options: AddRoutesOptions): HttpRoute[] {
-    const methods = options.methods ?? [HttpMethod.ANY];
-    return methods.map((method) => {
-      const authorizationScopes = options.authorizationScopes ?? this.defaultAuthorizationScopes;
+      const methods = options.methods ?? [ HttpMethod.ANY ];
+      return methods.map((method) => {
+          const authorizationScopes = options.authorizationScopes ?? this.defaultAuthorizationScopes;
 
-      return new HttpRoute(this, `${method}${options.path}`, {
-        httpApi: this,
-        routeKey: HttpRouteKey.with(options.path, method),
-        integration: options.integration,
-        authorizer: options.authorizer ?? this.defaultAuthorizer,
-        authorizationScopes,
+          return new HttpRoute(this, `${method}${options.path}`, {
+              httpApi: this,
+              routeKey: HttpRouteKey.with(options.path, method),
+              integration: options.integration,
+              authorizer: options.authorizer ?? this.defaultAuthorizer,
+              authorizationScopes,
+          });
       });
-    });
   }
 }

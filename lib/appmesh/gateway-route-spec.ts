@@ -1,7 +1,7 @@
-import { CfnGatewayRoute } from "aws-cdk-lib/aws-appmesh";
 import { Construct } from 'constructs';
-import { Protocol } from './shared-interfaces';
 import { IVirtualService } from './virtual-service';
+import { Protocol } from './shared-interfaces';
+import { aws_appmesh as appmesh } from 'aws-cdk-lib';
 
 /**
  * The criterion for determining a request match for this GatewayRoute
@@ -67,21 +67,21 @@ export interface GatewayRouteSpecConfig {
      *
      * @default - no http spec
      */
-    readonly httpSpecConfig?: CfnGatewayRoute.HttpGatewayRouteProperty;
+    readonly httpSpecConfig?: appmesh.CfnGatewayRoute.HttpGatewayRouteProperty;
 
     /**
      * The spec for an http2 gateway route
      *
      * @default - no http2 spec
      */
-    readonly http2SpecConfig?: CfnGatewayRoute.HttpGatewayRouteProperty;
+    readonly http2SpecConfig?: appmesh.CfnGatewayRoute.HttpGatewayRouteProperty;
 
     /**
      * The spec for a grpc gateway route
      *
      * @default - no grpc spec
      */
-    readonly grpcSpecConfig?: CfnGatewayRoute.GrpcGatewayRouteProperty;
+    readonly grpcSpecConfig?: appmesh.CfnGatewayRoute.GrpcGatewayRouteProperty;
 }
 
 /**
@@ -149,10 +149,10 @@ class HttpGatewayRouteSpec extends GatewayRouteSpec {
 
     public bind(_scope: Construct): GatewayRouteSpecConfig {
         const prefixPath = this.match ? this.match.prefixPath : '/';
-        if (prefixPath[0] != '/') {
+        if ('/' != prefixPath[0]) {
             throw new Error(`Prefix Path must start with \'/\', got: ${prefixPath}`);
         }
-        const httpConfig: CfnGatewayRoute.HttpGatewayRouteProperty = {
+        const httpConfig: appmesh.CfnGatewayRoute.HttpGatewayRouteProperty = {
             match: {
                 prefix: prefixPath,
             },

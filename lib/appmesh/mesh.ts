@@ -1,10 +1,8 @@
-import * as cdk from 'aws-cdk-lib';
-import { ArnFormat } from 'aws-cdk-lib';
-import { CfnMesh } from "aws-cdk-lib/aws-appmesh";
-import { Construct } from 'constructs';
+import { ArnFormat, IResource, Lazy, Names, Resource, Stack, aws_appmesh as appmesh } from 'aws-cdk-lib';
 import { VirtualGateway, VirtualGatewayBaseProps } from './virtual-gateway';
 import { VirtualNode, VirtualNodeBaseProps } from './virtual-node';
 import { VirtualRouter, VirtualRouterBaseProps } from './virtual-router';
+import { Construct } from 'constructs';
 
 /**
  * A utility enum defined for the egressFilter type property, the default of DROP_ALL,
@@ -26,7 +24,7 @@ export enum MeshFilterType {
 /**
  * Interface wich all Mesh based classes MUST implement
  */
-export interface IMesh extends cdk.IResource {
+export interface IMesh extends IResource {
     /**
      * The name of the AppMesh mesh
      *
@@ -60,7 +58,7 @@ export interface IMesh extends cdk.IResource {
 /**
  * Represents a new or imported AppMesh mesh
  */
-abstract class MeshBase extends cdk.Resource implements IMesh {
+abstract class MeshBase extends Resource implements IMesh {
     /**
      * The name of the AppMesh mesh
      */
@@ -131,7 +129,7 @@ export class Mesh extends MeshBase {
      * Import an existing mesh by arn
      */
     public static fromMeshArn(scope: Construct, id: string, meshArn: string): IMesh {
-        const parts = cdk.Stack.of(scope).splitArn(meshArn, ArnFormat.SLASH_RESOURCE_NAME);
+        const parts = Stack.of(scope).splitArn(meshArn, ArnFormat.SLASH_RESOURCE_NAME);
 
         class Import extends MeshBase {
             public meshName = parts.resourceName || '';
@@ -145,7 +143,7 @@ export class Mesh extends MeshBase {
      * Import an existing mesh by name
      */
     public static fromMeshName(scope: Construct, id: string, meshName: string): IMesh {
-        const arn = cdk.Stack.of(scope).formatArn({
+        const arn = Stack.of(scope).formatArn({
             service: 'appmesh',
             resource: 'mesh',
             resourceName: meshName,
@@ -171,10 +169,10 @@ export class Mesh extends MeshBase {
 
     constructor(scope: Construct, id: string, props: MeshProps = {}) {
         super(scope, id, {
-            physicalName: props.meshName || cdk.Lazy.string({ produce: () => cdk.Names.uniqueId(this) }),
+            physicalName: props.meshName || Lazy.string({ produce: () => Names.uniqueId(this) }),
         });
 
-        const mesh = new CfnMesh(this, 'Resource', {
+        const mesh = new appmesh.CfnMesh(this, 'Resource', {
             meshName: this.physicalName,
             spec: {
                 egressFilter: props.egressFilter ? {

@@ -1,8 +1,8 @@
-import { aws_apigatewayv2 as apigatewayv2, aws_cloudwatch as cloudwatch, Stack } from 'aws-cdk-lib';
+import { IApi, IStage, StageAttributes, StageOptions } from '../common';
+import { Stack, aws_apigatewayv2 as apigatewayv2, aws_cloudwatch as cloudwatch } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { StageOptions, IApi, IStage, StageAttributes } from '../common';
-import { StageBase } from '../common/base';
 import { IHttpApi } from './api';
+import { StageBase } from '../common/base';
 
 const DEFAULT_STAGE_NAME = '$default';
 
@@ -102,27 +102,27 @@ abstract class HttpStageBase extends StageBase implements IHttpStage {
   public abstract readonly api: IHttpApi;
 
   public metricClientError(props?: cloudwatch.MetricOptions): cloudwatch.Metric {
-    return this.metric('4xx', { statistic: 'Sum', ...props });
+      return this.metric('4xx', { statistic: 'Sum', ...props });
   }
 
   public metricServerError(props?: cloudwatch.MetricOptions): cloudwatch.Metric {
-    return this.metric('5xx', { statistic: 'Sum', ...props });
+      return this.metric('5xx', { statistic: 'Sum', ...props });
   }
 
   public metricDataProcessed(props?: cloudwatch.MetricOptions): cloudwatch.Metric {
-    return this.metric('DataProcessed', { statistic: 'Sum', ...props });
+      return this.metric('DataProcessed', { statistic: 'Sum', ...props });
   }
 
   public metricCount(props?: cloudwatch.MetricOptions): cloudwatch.Metric {
-    return this.metric('Count', { statistic: 'SampleCount', ...props });
+      return this.metric('Count', { statistic: 'SampleCount', ...props });
   }
 
   public metricIntegrationLatency(props?: cloudwatch.MetricOptions): cloudwatch.Metric {
-    return this.metric('IntegrationLatency', props);
+      return this.metric('IntegrationLatency', props);
   }
 
   public metricLatency(props?: cloudwatch.MetricOptions): cloudwatch.Metric {
-    return this.metric('Latency', props);
+      return this.metric('Latency', props);
   }
 }
 
@@ -131,64 +131,64 @@ abstract class HttpStageBase extends StageBase implements IHttpStage {
  * @resource AWS::ApiGatewayV2::Stage
  */
 export class HttpStage extends HttpStageBase {
-  /**
+    /**
    * Import an existing stage into this CDK app.
    */
-  public static fromHttpStageAttributes(scope: Construct, id: string, attrs: HttpStageAttributes): IHttpStage {
-    class Import extends HttpStageBase {
+    public static fromHttpStageAttributes(scope: Construct, id: string, attrs: HttpStageAttributes): IHttpStage {
+        class Import extends HttpStageBase {
       protected readonly baseApi = attrs.api;
       public readonly stageName = attrs.stageName;
       public readonly api = attrs.api;
 
       get url(): string {
-        throw new Error('url is not available for imported stages.');
+          throw new Error('url is not available for imported stages.');
       }
 
       get domainUrl(): string {
-        throw new Error('domainUrl is not available for imported stages.');
+          throw new Error('domainUrl is not available for imported stages.');
       }
+        }
+        return new Import(scope, id);
     }
-    return new Import(scope, id);
-  }
 
   protected readonly baseApi: IApi;
   public readonly stageName: string;
   public readonly api: IHttpApi;
 
   constructor(scope: Construct, id: string, props: HttpStageProps) {
-    super(scope, id, {
-      physicalName: props.stageName ? props.stageName : DEFAULT_STAGE_NAME,
-    });
+      super(scope, id, {
+          physicalName: props.stageName ? props.stageName : DEFAULT_STAGE_NAME,
+      });
 
-    new apigatewayv2.CfnStage(this, 'Resource', {
-      apiId: props.httpApi.apiId,
-      stageName: this.physicalName,
-      autoDeploy: props.autoDeploy,
-    });
+      new apigatewayv2.CfnStage(this, 'Resource', {
+          apiId: props.httpApi.apiId,
+          stageName: this.physicalName,
+          autoDeploy: props.autoDeploy,
+      });
 
-    this.stageName = this.physicalName;
-    this.baseApi = props.httpApi;
-    this.api = props.httpApi;
+      this.stageName = this.physicalName;
+      this.baseApi = props.httpApi;
+      this.api = props.httpApi;
 
-    if (props.domainMapping) {
-      this._addDomainMapping(props.domainMapping);
-    }
+      if (props.domainMapping) {
+          this._addDomainMapping(props.domainMapping);
+      }
   }
 
   /**
    * The URL to this stage.
    */
   public get url(): string {
-    const s = Stack.of(this);
-    const urlPath = this.stageName === DEFAULT_STAGE_NAME ? '' : this.stageName;
-    return `https://${this.api.apiId}.execute-api.${s.region}.${s.urlSuffix}/${urlPath}`;
+      const s = Stack.of(this);
+      const urlPath = this.stageName === DEFAULT_STAGE_NAME ? '' : this.stageName;
+      return `https://${this.api.apiId}.execute-api.${s.region}.${s.urlSuffix}/${urlPath}`;
   }
 
   public get domainUrl(): string {
-    if (!this._apiMapping) {
-      throw new Error('domainUrl is not available when no API mapping is associated with the Stage');
-    }
+      if (!this._apiMapping) {
+          throw new Error('domainUrl is not available when no API mapping is associated with the Stage');
+      }
 
-    return `https://${this._apiMapping.domainName.name}/${this._apiMapping.mappingKey ?? ''}`;
+      return `https://${this._apiMapping.domainName.name}/${this._apiMapping.mappingKey ?? ''}`;
   }
 }

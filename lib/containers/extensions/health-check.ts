@@ -1,6 +1,6 @@
-import { aws_ecs as ecs } from 'aws-cdk-lib';
 import { ContainerMutatingHook, ServiceExtension } from './extension-interfaces';
 import { Container } from './container';
+import { aws_ecs as ecs } from 'aws-cdk-lib';
 
 class HealthCheckHook extends ContainerMutatingHook {
     constructor(private healthCheck: ecs.HealthCheck) {

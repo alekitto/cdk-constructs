@@ -1,10 +1,6 @@
-import * as cdk from 'aws-cdk-lib';
-import { Protocol } from './shared-interfaces';
-
-// keep this import separate from other imports to reduce chance for merge conflicts with v2-main
-// eslint-disable-next-line no-duplicate-imports, import/order
+import { Duration, aws_appmesh as appmesh } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { CfnVirtualGateway, CfnVirtualNode } from "aws-cdk-lib/aws-appmesh";
+import { Protocol } from './shared-interfaces';
 
 /**
  * Properties used to define healthchecks.
@@ -22,14 +18,14 @@ interface HealthCheckCommonOptions {
      *
      * @default Duration.seconds(5)
      */
-    readonly interval?: cdk.Duration;
+    readonly interval?: Duration;
 
     /**
      * The amount of time to wait when receiving a response from the health check.
      *
      * @default Duration.seconds(2)
      */
-    readonly timeout?: cdk.Duration;
+    readonly timeout?: Duration;
 
     /**
      * The number of consecutive failed health checks that must occur before declaring a listener unhealthy.
@@ -54,12 +50,12 @@ export interface HttpHealthCheckOptions extends HealthCheckCommonOptions {
 /**
  * Properties used to define GRPC Based healthchecks.
  */
-export interface GrpcHealthCheckOptions extends HealthCheckCommonOptions { }
+export type GrpcHealthCheckOptions = HealthCheckCommonOptions
 
 /**
  * Properties used to define TCP Based healthchecks.
  */
-export interface TcpHealthCheckOptions extends HealthCheckCommonOptions { }
+export type TcpHealthCheckOptions = HealthCheckCommonOptions
 
 /**
  * All Properties for Health Checks for mesh endpoints
@@ -70,14 +66,14 @@ export interface HealthCheckConfig {
      *
      * @default - no health checks
      */
-    readonly virtualNodeHealthCheck?: CfnVirtualNode.HealthCheckProperty;
+    readonly virtualNodeHealthCheck?: appmesh.CfnVirtualNode.HealthCheckProperty;
 
     /**
      * VirtualGateway CFN configuration for Health Checks
      *
      * @default - no health checks
      */
-    readonly virtualGatewayHealthCheck?: CfnVirtualGateway.VirtualGatewayHealthCheckPolicyProperty;
+    readonly virtualGatewayHealthCheck?: appmesh.CfnVirtualGateway.VirtualGatewayHealthCheckPolicyProperty;
 }
 
 /**
@@ -137,23 +133,23 @@ class HealthCheckImpl extends HealthCheck {
         private readonly protocol: Protocol,
         private readonly healthyThreshold: number = 2,
         private readonly unhealthyThreshold: number = 2,
-        private readonly interval: cdk.Duration = cdk.Duration.seconds(5),
-        private readonly timeout: cdk.Duration = cdk.Duration.seconds(2),
+        private readonly interval: Duration = Duration.seconds(5),
+        private readonly timeout: Duration = Duration.seconds(2),
         private readonly path?: string) {
         super();
-        if (healthyThreshold < 2 || healthyThreshold > 10) {
+        if (2 > healthyThreshold || 10 < healthyThreshold) {
             throw new Error('healthyThreshold must be between 2 and 10');
         }
 
-        if (unhealthyThreshold < 2 || unhealthyThreshold > 10) {
+        if (2 > unhealthyThreshold || 10 < unhealthyThreshold) {
             throw new Error('unhealthyThreshold must be between 2 and 10');
         }
 
-        if (interval.toMilliseconds() < 5000 || interval.toMilliseconds() > 300_000) {
+        if (5000 > interval.toMilliseconds() || 300_000 < interval.toMilliseconds()) {
             throw new Error('interval must be between 5 seconds and 300 seconds');
         }
 
-        if (timeout.toMilliseconds() < 2000 || timeout.toMilliseconds() > 60_000) {
+        if (2000 > timeout.toMilliseconds() || 60_000 < timeout.toMilliseconds()) {
             throw new Error('timeout must be between 2 seconds and 60 seconds');
         }
 
