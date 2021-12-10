@@ -1,7 +1,6 @@
 import { AssetStaging, BundlingOptions, DockerVolume, aws_lambda as lambda, aws_s3_assets as s3_assets } from 'aws-cdk-lib';
 import { SpawnSyncOptions, spawnSync } from 'child_process';
-import { AssetCode } from 'aws-cdk-lib/lib/aws-lambda/lib/code';
-import { makeUniqueId } from 'aws-cdk-lib/lib/core/lib/private/uniqueid';
+import { makeUniqueId } from 'aws-cdk-lib/core/lib/private/uniqueid';
 
 function flatten(x: string[][]) {
     return Array.prototype.concat([], ...x);
@@ -26,7 +25,7 @@ function dockerExec(args: string[], options?: SpawnSyncOptions) {
 }
 
 export abstract class Code extends lambda.Code {
-    static fromAsset(path: string, options?: s3_assets.AssetOptions): AssetCode {
+    static fromAsset(path: string, options?: s3_assets.AssetOptions): lambda.AssetCode {
         const bundlingOptions: BundlingOptions | undefined = options?.bundling !== undefined ? {
             local: {
                 tryBundle(outputDir: string, options: BundlingOptions): boolean {

@@ -1,9 +1,9 @@
 import { EnvironmentCapacityType, ServiceBuild } from './extensions/extension-interfaces';
 import {
-    aws_ec2 as ec2,
     aws_ecs as ecs,
     aws_iam as iam
 } from 'aws-cdk-lib';
+import { BaseService } from './base-service';
 import { Construct } from 'constructs';
 import { IEnvironment } from './environment';
 import { ServiceDescription } from './service-description';
@@ -51,81 +51,19 @@ export interface ServiceProps {
  * supports various extensions and keeps track of any mutating state, allowing
  * it to build up an ECS service progressively.
  */
-export class Service extends Construct {
+export class Service extends BaseService {
     /**
      * The underlying ECS service that was created.
      */
     public ecsService!: ecs.Ec2Service | ecs.FargateService;
 
     /**
-     * The name of the service.
-     */
-    public readonly id: string;
-
-    /**
-     * The VPC where this service should be placed.
-     */
-    public readonly vpc: ec2.IVpc;
-
-    /**
-     * The cluster that is providing capacity for this service.
-     * [disable-awslint:ref-via-interface]
-     */
-    public readonly cluster: ecs.ICluster;
-
-    /**
-     * The capacity type that this service will use.
-     * Valid values are EC2 or FARGATE.
-     */
-    public readonly capacityType: EnvironmentCapacityType;
-
-    /**
-     * The ServiceDescription used to build this service.
-     */
-    public readonly serviceDescription: ServiceDescription;
-
-    /**
-     * The environment where this service was launched.
-     */
-    public readonly environment: IEnvironment;
-
-    /**
-     * The generated task definition for this service. It is only
-     * generated after .prepare() has been executed.
-     */
-    protected taskDefinition!: ecs.TaskDefinition;
-
-    /**
      * The list of URLs associated with this service.
      */
     private urls: Record<string, string> = {};
 
-    private readonly scope: Construct;
-
     constructor(scope: Construct, id: string, props: ServiceProps) {
-        super(scope, id);
-
-        this.scope = scope;
-        this.id = id;
-        this.environment = props.environment;
-        this.vpc = props.environment.vpc;
-        this.cluster = props.environment.cluster;
-        this.capacityType = props.capacityType ?? props.environment.capacityType;
-        this.serviceDescription = props.serviceDescription;
-
-        // Check to make sure that the user has actually added a container
-        const containerextension = this.serviceDescription.get('service-container');
-
-        if (!containerextension) {
-            throw new Error(`Service '${this.id}' must have a Container extension`);
-        }
-
-        // First set the scope for all the extensions
-        for (const extensions in this.serviceDescription.extensions) {
-            if (this.serviceDescription.extensions[extensions]) {
-                this.serviceDescription.extensions[extensions].prehook(this, this.scope);
-            }
-        }
+        super(scope, id, props);
 
         // At the point of preparation all extensions have been defined on the service
         // So give each extension a chance to now add hooks to other extensions if
@@ -138,10 +76,6 @@ export class Service extends Construct {
 
         // Give each extension a chance to mutate the task def creation properties
         let taskDefProps = {
-            // Default CPU and memory
-            cpu: '256',
-            memoryMiB: '512',
-
             // Allow user to pre-define the taskRole so that it can be used in resource policies that may
             // Be defined before the ECS service exists in a CDK application
             taskRole: props.taskRole,
@@ -149,6 +83,14 @@ export class Service extends Construct {
             // Ensure that the task definition supports both EC2 and Fargate
             compatibility: ecs.Compatibility.EC2_AND_FARGATE,
         } as ecs.TaskDefinitionProps;
+
+        if (this.capacityType === EnvironmentCapacityType.FARGATE) {
+            taskDefProps = {
+                ...taskDefProps,
+                cpu: '256',
+                memoryMiB: '512',
+            };
+        }
 
         for (const extensions of Object.keys(this.serviceDescription.extensions)) {
             if (this.serviceDescription.extensions[extensions]) {
@@ -164,6 +106,22 @@ export class Service extends Construct {
             if (this.serviceDescription.extensions[extensions]) {
                 this.serviceDescription.extensions[extensions].useTaskDefinition(this.taskDefinition);
             }
+        }
+
+        if (this.capacityType === EnvironmentCapacityType.EC2) {
+            let memory = 0;
+            for (const extensions of Object.keys(this.serviceDescription.extensions)) {
+                if (this.serviceDescription.extensions[extensions]) {
+                    const container = this.serviceDescription.extensions[extensions].container;
+                    if (container) {
+                        const props = (container as any).props;
+                        memory += props.memoryReservationMiB ?? props.memoryLimitMiB;
+                    }
+                }
+            }
+
+            const node = this.taskDefinition.node.findChild('Resource') as ecs.CfnTaskDefinition;
+            node.memory = String(memory || 256);
         }
 
         // Now that all containers are created, give each extension a chance

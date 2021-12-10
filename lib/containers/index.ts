@@ -1,3 +1,4 @@
+export * from './scheduled-task';
 export * from './service';
 export * from './service-description';
 export * from './environment';

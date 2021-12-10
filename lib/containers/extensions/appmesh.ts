@@ -15,7 +15,7 @@ import { Construct } from 'constructs';
 import { Service } from '../service';
 
 // The version of the App Mesh envoy sidecar to add to the task.
-const APP_MESH_ENVOY_SIDECAR_VERSION = 'v1.17.2.0-prod';
+const APP_MESH_ENVOY_SIDECAR_VERSION = 'v1.20.0.1-prod';
 const meshNameCleanup = (name: string) => name.replace(/[^a-zA-Z0-9\-_]+/g, '-');
 
 /**
@@ -350,6 +350,10 @@ export class AppMeshExtension extends ServiceExtension {
     // Connect the app mesh extension for this service to an app mesh
     // Extension on another service.
     public connectToService(otherService: Service) {
+        if (! (this.parentService instanceof Service)) {
+            return;
+        }
+
         const otherAppMesh = otherService.serviceDescription.get('appmesh') as AppMeshExtension;
         const otherContainer = otherService.serviceDescription.get('service-container') as Container;
 

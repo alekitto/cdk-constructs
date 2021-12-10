@@ -91,6 +91,10 @@ export class NginxFpmSidecarExtension extends ServiceExtension {
                 container: app.container,
                 condition: ecs.ContainerDependencyCondition.START,
             });
+
+            if (this.parentService.networkMode == ecs.NetworkMode.BRIDGE) {
+                this.container.addLink(app.container, 'app');
+            }
         }
     }
 }

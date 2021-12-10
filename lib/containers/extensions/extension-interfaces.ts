@@ -2,7 +2,7 @@ import {
     Duration,
     aws_ecs as ecs
 } from 'aws-cdk-lib';
-import { CapacityProviderStrategy } from 'aws-cdk-lib/lib/aws-ecs/lib/cluster';
+import { BaseService } from '../base-service';
 import { Construct } from 'constructs';
 import { Service } from '../service';
 
@@ -108,7 +108,7 @@ export interface ServiceBuild {
      * @default - undefined
      * @experimental
      */
-    readonly capacityProviderStrategies?: CapacityProviderStrategy[];
+    readonly capacityProviderStrategies?: ecs.CapacityProviderStrategy[];
 
     /**
      * (experimental) Whether to enable the ability to execute into a container.
@@ -144,7 +144,7 @@ export abstract class ServiceExtension {
      * exists yet. Later, when the ServiceDescription is used to create a service,
      * the extension is told what Service it is now working on.
      */
-    protected parentService!: Service;
+    protected parentService!: BaseService;
     protected scope!: Construct;
 
     // A list of other extensions which want to mutate the
@@ -197,7 +197,7 @@ export abstract class ServiceExtension {
      * @param parent - The parent service which this extension has been added to
      * @param scope - The scope that this extension should create resources in
      */
-    public prehook(parent: Service, scope: Construct) {
+    public prehook(parent: BaseService, scope: Construct) {
         this.parentService = parent;
         this.scope = scope;
     }

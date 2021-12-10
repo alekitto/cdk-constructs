@@ -84,7 +84,10 @@ export class DbProxyExtension extends ServiceExtension {
         }
 
         const container = this.parentService.serviceDescription.get('service-container') as Container;
-        container.container!.addLink(this.container, 'db_proxy');
+        if (container.container && this.parentService.networkMode == ecs.NetworkMode.BRIDGE) {
+            container.container.addLink(this.container, 'db_proxy');
+        }
+
         if (undefined !== this.healthCheck) {
             container.container!.addContainerDependencies({
                 container: this.container,
