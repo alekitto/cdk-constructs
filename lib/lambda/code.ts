@@ -1,6 +1,6 @@
 import { AssetStaging, BundlingOptions, DockerVolume, aws_lambda as lambda, aws_s3_assets as s3_assets } from 'aws-cdk-lib';
 import { SpawnSyncOptions, spawnSync } from 'child_process';
-import { makeUniqueId } from 'aws-cdk-lib/core/lib/private/uniqueid';
+import { makeUniqueId } from '../util/uniqueid';
 
 function flatten(x: string[][]) {
     return Array.prototype.concat([], ...x);
