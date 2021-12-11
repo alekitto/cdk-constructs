@@ -173,6 +173,7 @@ export class AppMeshExtension extends ServiceExtension {
         // And some regions have their images in a different account. See:
         // https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy.html
         const mapping = new CfnMapping(this.scope, `${this.parentService.id}-envoy-image-account-mapping`, {
+            lazy: true,
             mapping: {
                 'ap-northeast-1': this.accountIdForRegion('ap-northeast-1'),
                 'ap-northeast-2': this.accountIdForRegion('ap-northeast-2'),
