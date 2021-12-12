@@ -91,21 +91,17 @@ export abstract class Code extends lambda.Code {
                     // Docker run --rm -v asset-input:/asset-input -v asset-output/asset-output <user command>
                     const environment = options.environment || {};
                     const command = options.command || [];
-                    const dockerArgs = [
-                        'run', '--rm',
-                        ...options.user
-                            ? [ '-u', options.user ]
-                            : [],
-                        ...flatten(dockerVolumes.map(v => {
-                            return [ '-v', `${v.volumeName}:${v.volume.containerPath}` ];
-                        })),
-                        ...flatten(Object.entries(environment).map(([ k, v ]) => [ '--env', `${k}=${v}` ])),
-                        '-w', inputVolume!.volume.containerPath,
-                        options.image.toJSON(),
-                        ...command,
-                    ];
 
-                    dockerExec(dockerArgs);
+                    options.image.run({
+                        command,
+                        environment,
+                        user: options.user,
+                        volumes: dockerVolumes.map(vol => ({
+                            hostPath: vol.volumeName,
+                            containerPath: vol.volume.containerPath,
+                        })),
+                        workingDirectory: inputVolume!.volume.containerPath,
+                    });
 
                     // Docker cp helper:/asset-output <staged bundling dir>
                     dockerExec([ 'cp', helperName + ':' + outputVolume!.volume.containerPath + '/.', outputVolume!.volume.hostPath ]);

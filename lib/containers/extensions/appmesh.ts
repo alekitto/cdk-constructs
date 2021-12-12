@@ -25,7 +25,7 @@ export interface MeshProps {
     /**
      * The service mesh into which to register the service.
      */
-    readonly mesh: appmesh.Mesh;
+    readonly mesh: appmesh.IMesh;
 
     /**
      * The protocol of the service.
@@ -56,6 +56,10 @@ export interface MeshProps {
     readonly egressIgnoredPorts?: number[];
 }
 
+function accountIdForRegion(region: string) {
+    return { ecrRepo: region_info.RegionInfo.get(region).appMeshRepositoryAccount };
+}
+
 /**
  * This extension adds an Envoy sidecar to the task definition and
  * creates the App Mesh resources required to route network traffic
@@ -71,7 +75,7 @@ export class AppMeshExtension extends ServiceExtension {
     protected virtualService!: appmesh.VirtualService;
     protected virtualRouter!: appmesh.VirtualRouter;
     protected route!: appmesh.Route;
-    private readonly mesh: appmesh.Mesh;
+    private readonly mesh: appmesh.IMesh;
     private readonly envoyVersion: string;
     private trafficPort: null | TrafficPort;
     private readonly egressIgnoredPorts: number[];
@@ -162,10 +166,6 @@ export class AppMeshExtension extends ServiceExtension {
         } as ecs.TaskDefinitionProps;
     }
 
-    private accountIdForRegion(region: string) {
-        return { ecrRepo: region_info.RegionInfo.get(region).appMeshRepositoryAccount };
-    }
-
     public useTaskDefinition(taskDefinition: ecs.TaskDefinition) {
         const region = Stack.of(this.scope).region;
 
@@ -175,27 +175,27 @@ export class AppMeshExtension extends ServiceExtension {
         const mapping = new CfnMapping(this.scope, `${this.parentService.id}-envoy-image-account-mapping`, {
             lazy: true,
             mapping: {
-                'ap-northeast-1': this.accountIdForRegion('ap-northeast-1'),
-                'ap-northeast-2': this.accountIdForRegion('ap-northeast-2'),
-                'ap-south-1': this.accountIdForRegion('ap-south-1'),
-                'ap-southeast-1': this.accountIdForRegion('ap-southeast-1'),
-                'ap-southeast-2': this.accountIdForRegion('ap-southeast-1'),
-                'ca-central-1': this.accountIdForRegion('ca-central-1'),
-                'eu-central-1': this.accountIdForRegion('eu-central-1'),
-                'eu-north-1': this.accountIdForRegion('eu-north-1'),
-                'eu-south-1': this.accountIdForRegion('eu-south-1'),
-                'eu-west-1': this.accountIdForRegion('eu-west-1'),
-                'eu-west-2': this.accountIdForRegion('eu-west-2'),
-                'eu-west-3': this.accountIdForRegion('eu-west-3'),
-                'sa-east-1': this.accountIdForRegion('sa-east-1'),
-                'us-east-1': this.accountIdForRegion('us-east-1'),
-                'us-east-2': this.accountIdForRegion('us-east-2'),
-                'us-west-1': this.accountIdForRegion('us-west-1'),
-                'us-west-2': this.accountIdForRegion('us-west-2'),
+                'ap-northeast-1': accountIdForRegion('ap-northeast-1'),
+                'ap-northeast-2': accountIdForRegion('ap-northeast-2'),
+                'ap-south-1': accountIdForRegion('ap-south-1'),
+                'ap-southeast-1': accountIdForRegion('ap-southeast-1'),
+                'ap-southeast-2': accountIdForRegion('ap-southeast-1'),
+                'ca-central-1': accountIdForRegion('ca-central-1'),
+                'eu-central-1': accountIdForRegion('eu-central-1'),
+                'eu-north-1': accountIdForRegion('eu-north-1'),
+                'eu-south-1': accountIdForRegion('eu-south-1'),
+                'eu-west-1': accountIdForRegion('eu-west-1'),
+                'eu-west-2': accountIdForRegion('eu-west-2'),
+                'eu-west-3': accountIdForRegion('eu-west-3'),
+                'sa-east-1': accountIdForRegion('sa-east-1'),
+                'us-east-1': accountIdForRegion('us-east-1'),
+                'us-east-2': accountIdForRegion('us-east-2'),
+                'us-west-1': accountIdForRegion('us-west-1'),
+                'us-west-2': accountIdForRegion('us-west-2'),
 
-                'me-south-1': this.accountIdForRegion('me-south-1'),
-                'ap-east-1': this.accountIdForRegion('ap-east-1'),
-                'af-south-1': this.accountIdForRegion('af-south-1'),
+                'me-south-1': accountIdForRegion('me-south-1'),
+                'ap-east-1': accountIdForRegion('ap-east-1'),
+                'af-south-1': accountIdForRegion('af-south-1'),
             },
         });
 
@@ -313,9 +313,7 @@ export class AppMeshExtension extends ServiceExtension {
             mesh: this.mesh,
             virtualNodeName: meshNameCleanup(this.parentService.id),
             serviceDiscovery: service.cloudMapService
-                ? appmesh.ServiceDiscovery.cloudMap({
-                    service: service.cloudMapService,
-                })
+                ? appmesh.ServiceDiscovery.cloudMap(service.cloudMapService)
                 : undefined,
             listeners: [ addListener(this.protocol, this.trafficPort.port) ],
         });

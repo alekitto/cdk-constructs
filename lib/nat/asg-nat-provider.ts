@@ -18,15 +18,10 @@ export class NatAsgProvider extends ec2.NatProvider implements ec2.IConnectable 
 
     constructor(private readonly scope: Construct, private readonly props: ec2.NatInstanceProps) {
         super();
-
-        if (props.defaultAllowedTraffic !== undefined && props.allowAllTraffic !== undefined) {
-            throw new Error('Can not specify both of \'defaultAllowedTraffic\' and \'defaultAllowedTraffic\'; prefer \'defaultAllowedTraffic\'');
-        }
     }
 
     public configureNat(options: ec2.ConfigureNatOptions) {
-        const defaultDirection = this.props.defaultAllowedTraffic ??
-            (this.props.allowAllTraffic ?? true ? ec2.NatTrafficDirection.INBOUND_AND_OUTBOUND : ec2.NatTrafficDirection.OUTBOUND_ONLY);
+        const defaultDirection = this.props.defaultAllowedTraffic ?? ec2.NatTrafficDirection.INBOUND_AND_OUTBOUND;
 
         // Create the NAT instances. They can share a security group and a Role.
         const machineImage = this.props.machineImage || new ec2.NatInstanceImage();

@@ -1,6 +1,6 @@
 {
   "name": "@alekitto/cdk-constructs",
-  "version": "0.1.8",
+  "version": "0.2.0",
   "description": "AWS CDK constructs",
   "main": "lib/index.js",
   "scripts": {
@@ -13,11 +13,11 @@
   "author": "Alessandro Chitolina <alekitto@gmail.com>",
   "license": "MIT",
   "peerDependencies": {
-    "aws-cdk": "^2.0.0-rc.27",
-    "aws-cdk-lib": "^2.0.0-rc.27"
+    "aws-cdk": "^2.1.0",
+    "aws-cdk-lib": "^2.1.0"
   },
   "dependencies": {
-    "aws-cdk-lib": "^2.0.0-rc.27",
+    "aws-cdk-lib": "^2.1.0",
     "constructs": "^10.0.0",
     "source-map-support": "^0.5.21"
   },
@@ -26,7 +26,7 @@
     "@types/node": "14.14.31",
     "@typescript-eslint/eslint-plugin": "^5.4.0",
     "@typescript-eslint/parser": "^5.4.0",
-    "aws-cdk": "^2.0.0-rc.27",
+    "aws-cdk": "^2.1.0",
     "eslint": "^8.3.0",
     "jest": "^27.3.1",
     "ts-jest": "^27.0.7",
