@@ -18,10 +18,16 @@ function dockerExec(args: string[], options?: SpawnSyncOptions) {
         if (proc.stdout || proc.stderr) {
             throw new Error(`[Status ${proc.status}] stdout: ${proc.stdout?.toString().trim()}\n\n\nstderr: ${proc.stderr?.toString().trim()}`);
         }
+
         throw new Error(`${prog} exited with status ${proc.status}`);
     }
 
     return proc;
+}
+
+interface BundleVolume {
+    volume: DockerVolume,
+    volumeName: string,
 }
 
 export abstract class Code extends lambda.Code {
@@ -34,8 +40,8 @@ export abstract class Code extends lambda.Code {
                         volumeName: string,
                     }[] = [];
 
-                    let inputVolume: any;
-                    let outputVolume: any;
+                    let inputVolume: BundleVolume | undefined;
+                    let outputVolume: BundleVolume | undefined;
 
                     // Always mount input and output dir
                     const volumes = [

@@ -8,26 +8,26 @@ import { IWebSocketRouteIntegration } from './integration';
  * Represents a Route for an WebSocket API.
  */
 export interface IWebSocketRoute extends IRoute {
-  /**
-   * The WebSocket API associated with this route.
-   */
-  readonly webSocketApi: IWebSocketApi;
+    /**
+     * The WebSocket API associated with this route.
+     */
+    readonly webSocketApi: IWebSocketApi;
 
-  /**
-   * The key to this route.
-   * @attribute
-   */
-  readonly routeKey: string;
+    /**
+     * The key to this route.
+     * @attribute
+     */
+    readonly routeKey: string;
 }
 
 /**
  * Options used to add route to the API
  */
 export interface WebSocketRouteOptions {
-  /**
-   * The integration to be configured on this route.
-   */
-  readonly integration: IWebSocketRouteIntegration;
+    /**
+     * The integration to be configured on this route.
+     */
+    readonly integration: IWebSocketRouteIntegration;
 }
 
 
@@ -35,15 +35,15 @@ export interface WebSocketRouteOptions {
  * Properties to initialize a new Route
  */
 export interface WebSocketRouteProps extends WebSocketRouteOptions {
-  /**
-   * The API the route is associated with
-   */
-  readonly webSocketApi: IWebSocketApi;
+    /**
+     * The API the route is associated with
+     */
+    readonly webSocketApi: IWebSocketApi;
 
-  /**
-   * The key to this route.
-   */
-  readonly routeKey: string;
+    /**
+     * The key to this route.
+     */
+    readonly routeKey: string;
 }
 
 /**
@@ -51,33 +51,33 @@ export interface WebSocketRouteProps extends WebSocketRouteOptions {
  * @resource AWS::ApiGatewayV2::Route
  */
 export class WebSocketRoute extends Resource implements IWebSocketRoute {
-  public readonly routeId: string;
-  public readonly webSocketApi: IWebSocketApi;
-  public readonly routeKey: string;
+    public readonly routeId: string;
+    public readonly webSocketApi: IWebSocketApi;
+    public readonly routeKey: string;
 
-  /**
-   * Integration response ID
-   */
-  public readonly integrationResponseId?: string;
+    /**
+     * Integration response ID
+     */
+    public readonly integrationResponseId?: string;
 
-  constructor(scope: Construct, id: string, props: WebSocketRouteProps) {
-      super(scope, id);
+    constructor(scope: Construct, id: string, props: WebSocketRouteProps) {
+        super(scope, id);
 
-      this.webSocketApi = props.webSocketApi;
-      this.routeKey = props.routeKey;
+        this.webSocketApi = props.webSocketApi;
+        this.routeKey = props.routeKey;
 
-      const config = props.integration.bind({
-          route: this,
-          scope: this,
-      });
+        const config = props.integration.bind({
+            route: this,
+            scope: this,
+        });
 
-      const integration = props.webSocketApi._addIntegration(this, config);
+        const integration = props.webSocketApi._addIntegration(this, config);
 
-      const route = new apigatewayv2.CfnRoute(this, 'Resource', {
-          apiId: props.webSocketApi.apiId,
-          routeKey: props.routeKey,
-          target: `integrations/${integration.integrationId}`,
-      });
-      this.routeId = route.ref;
-  }
+        const route = new apigatewayv2.CfnRoute(this, 'Resource', {
+            apiId: props.webSocketApi.apiId,
+            routeKey: props.routeKey,
+            target: `integrations/${integration.integrationId}`,
+        });
+        this.routeId = route.ref;
+    }
 }

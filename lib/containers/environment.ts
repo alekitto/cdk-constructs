@@ -162,7 +162,7 @@ export class ImportedEnvironment extends Construct implements IEnvironment {
      * Adding a default cloudmap namespace to the cluster will throw an error, as we don't
      * own it.
      */
-    addDefaultCloudMapNamespace(_options: ecs.CloudMapNamespaceOptions) {
+    addDefaultCloudMapNamespace(_: ecs.CloudMapNamespaceOptions) {
         throw new Error('the cluster environment is immutable when imported');
     }
 }
