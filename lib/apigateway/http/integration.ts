@@ -1,5 +1,5 @@
 import { HttpMethod, IHttpRoute } from './route';
-import { Resource, aws_apigatewayv2 as apigatewayv2 } from 'aws-cdk-lib';
+import { Resource, aws_apigatewayv2 as apigatewayv2, aws_iam as iam } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { IHttpApi } from './api';
 import { IIntegration } from '../common';
@@ -18,15 +18,96 @@ export interface IHttpIntegration extends IIntegration {
  */
 export enum HttpIntegrationType {
     /**
-     * Integration type is a Lambda proxy
-     * @see https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html
-     */
-    LAMBDA_PROXY = 'AWS_PROXY',
-    /**
-     * Integration type is an HTTP proxy
-     * @see https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html
+     * Integration type is an HTTP proxy.
+     *
+     * For integrating the route or method request with an HTTP endpoint, with the
+     * client request passed through as-is. This is also referred to as HTTP proxy
+     * integration. For HTTP API private integrations, use an HTTP_PROXY integration.
+     *
+     * @see https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-http.html
      */
     HTTP_PROXY = 'HTTP_PROXY',
+
+    /**
+     * Integration type is an AWS proxy.
+     *
+     * For integrating the route or method request with a Lambda function or other
+     * AWS service action. This integration is also referred to as a Lambda proxy
+     * integration.
+     *
+     * @see https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-aws-services.html
+     * @see https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html
+     */
+    AWS_PROXY = 'AWS_PROXY',
+}
+
+/**
+ * Supported integration subtypes
+ * @see https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-aws-services-reference.html
+ */
+export enum HttpIntegrationSubtype {
+    /**
+     * EventBridge PutEvents integration
+     */
+    EVENTBRIDGE_PUT_EVENTS = 'EventBridge-PutEvents',
+    /**
+     * SQS SendMessage integration
+     */
+    SQS_SEND_MESSAGE = 'SQS-SendMessage',
+    /**
+     * SQS ReceiveMessage integration,
+     */
+    SQS_RECEIVE_MESSAGE = 'SQS-ReceiveMessage',
+    /**
+     * SQS DeleteMessage integration,
+     */
+    SQS_DELETE_MESSAGE = 'SQS-DeleteMessage',
+    /**
+     * SQS PurgeQueue integration
+     */
+    SQS_PURGE_QUEUE = 'SQS-PurgeQueue',
+    /**
+     * AppConfig GetConfiguration integration
+     */
+    APPCONFIG_GET_CONFIGURATION = 'AppConfig-GetConfiguration',
+    /**
+     * Kinesis PutRecord integration
+     */
+    KINESIS_PUT_RECORD = 'Kinesis-PutRecord',
+    /**
+     * Step Functions StartExecution integration
+     */
+    STEPFUNCTIONS_START_EXECUTION = 'StepFunctions-StartExecution',
+    /**
+     * Step Functions StartSyncExecution integration
+     */
+    STEPFUNCTIONS_START_SYNC_EXECUTION = 'StepFunctions-StartSyncExecution',
+    /**
+     * Step Functions StopExecution integration
+     */
+    STEPFUNCTIONS_STOP_EXECUTION = 'StepFunctions-StopExecution',
+}
+
+/**
+ * Credentials used for AWS Service integrations.
+ */
+export abstract class IntegrationCredentials {
+    /**
+     * Use the specified role for integration requests
+     */
+    public static fromRole(role: iam.IRole): IntegrationCredentials {
+        return { credentialsArn: role.roleArn };
+    }
+
+    /** Use the calling user's identity to call the integration */
+    public static useCallerIdentity(): IntegrationCredentials {
+        return { credentialsArn: 'arn:aws:iam::*:user/*' };
+    }
+
+    /**
+     * The ARN of the credentials
+     */
+    public abstract readonly credentialsArn: string;
 }
 
 /**
@@ -84,11 +165,22 @@ export interface HttpIntegrationProps {
     readonly integrationType: HttpIntegrationType;
 
     /**
-     * Integration URI.
-     * This will be the function ARN in the case of `HttpIntegrationType.LAMBDA_PROXY`,
-     * or HTTP URL in the case of `HttpIntegrationType.HTTP_PROXY`.
+     * Integration subtype.
+     *
+     * Used for AWS Service integrations, specifies the target of the integration.
+     *
+     * @default - none, required if no `integrationUri` is defined.
      */
-    readonly integrationUri: string;
+    readonly integrationSubtype?: HttpIntegrationSubtype;
+
+    /**
+     * Integration URI.
+     * This will be the function ARN in the case of `HttpIntegrationType.AWS_PROXY`,
+     * or HTTP URL in the case of `HttpIntegrationType.HTTP_PROXY`.
+     *
+     * @default - none, required if no `integrationSubtype` is defined.
+     */
+    readonly integrationUri?: string;
 
     /**
      * The HTTP method to use when calling the underlying HTTP proxy
@@ -113,7 +205,7 @@ export interface HttpIntegrationProps {
     /**
      * The version of the payload format
      * @see https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html
-     * @default - defaults to latest in the case of HttpIntegrationType.LAMBDA_PROXY`, irrelevant otherwise.
+     * @default - defaults to latest in the case of HttpIntegrationType.AWS_PROXY`, irrelevant otherwise.
      */
     readonly payloadFormatVersion?: PayloadFormatVersion;
 
@@ -130,6 +222,13 @@ export interface HttpIntegrationProps {
      * @default undefined requests are sent to the backend unmodified
      */
     readonly parameterMapping?: ParameterMapping;
+
+    /**
+     * The credentials with which to invoke the integration.
+     *
+     * @default - no credentials, use resource-based permissions on supported AWS services
+     */
+    readonly credentials?: IntegrationCredentials;
 }
 
 /**
@@ -185,11 +284,49 @@ export interface HttpRouteIntegrationBindOptions {
 /**
  * The interface that various route integration classes will inherit.
  */
-export interface IHttpRouteIntegration {
+export abstract class HttpRouteIntegration {
+    private integration?: HttpIntegration;
+
+    /**
+     * Initialize an integration for a route on http api.
+     * @param id id of the underlying `HttpIntegration` construct.
+     */
+    // eslint-disable-next-line no-useless-constructor
+    constructor(private readonly id: string) {}
+
+    /**
+     * Internal method called when binding this integration to the route.
+     * @internal
+     */
+    public _bindToRoute(options: HttpRouteIntegrationBindOptions): { readonly integrationId: string } {
+        if (this.integration && this.integration.httpApi.node.addr !== options.route.httpApi.node.addr) {
+            throw new Error('A single integration cannot be associated with multiple APIs.');
+        }
+
+        if (!this.integration) {
+            const config = this.bind(options);
+
+            this.integration = new HttpIntegration(options.scope, this.id, {
+                httpApi: options.route.httpApi,
+                integrationType: config.type,
+                integrationSubtype: config.subtype,
+                integrationUri: config.uri,
+                method: config.method,
+                connectionId: config.connectionId,
+                connectionType: config.connectionType,
+                payloadFormatVersion: config.payloadFormatVersion,
+                secureServerName: config.secureServerName,
+                parameterMapping: config.parameterMapping,
+                credentials: config.credentials,
+            });
+        }
+        return { integrationId: this.integration.integrationId };
+    }
+
     /**
      * Bind this integration to the route.
      */
-    bind(options: HttpRouteIntegrationBindOptions): HttpRouteIntegrationConfig;
+    public abstract bind(options: HttpRouteIntegrationBindOptions): HttpRouteIntegrationConfig;
 }
 
 /**
@@ -202,9 +339,18 @@ export interface HttpRouteIntegrationConfig {
     readonly type: HttpIntegrationType;
 
     /**
-     * Integration URI
+     * Integration subtype.
+     *
+     * @default - none, required if no `integrationUri` is defined.
      */
-    readonly uri: string;
+    readonly subtype?: HttpIntegrationSubtype;
+
+    /**
+     * Integration URI
+     *
+     * @default - none, required if no `integrationSubtype` is defined.
+     */
+    readonly uri?: string;
 
     /**
      * The HTTP method that must be used to invoke the underlying proxy.
@@ -247,4 +393,11 @@ export interface HttpRouteIntegrationConfig {
      * @default undefined requests are sent to the backend unmodified
      */
     readonly parameterMapping?: ParameterMapping;
+
+    /**
+     * The credentials with which to invoke the integration.
+     *
+     * @default - no credentials, use resource-based permissions on supported AWS services
+     */
+    readonly credentials?: IntegrationCredentials;
 }

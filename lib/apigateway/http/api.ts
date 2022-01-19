@@ -1,7 +1,7 @@
 import { BatchHttpRouteOptions, HttpMethod, HttpRoute, HttpRouteKey } from './route';
 import { DomainMappingOptions, IApi } from '../common';
 import { Duration, aws_apigatewayv2 as apigatewayv2, aws_cloudwatch as cloudwatch } from 'aws-cdk-lib';
-import { HttpIntegration, HttpRouteIntegrationConfig, IHttpRouteIntegration } from './integration';
+import {HttpIntegration, HttpRouteIntegration, HttpRouteIntegrationConfig} from './integration';
 import { HttpStage, HttpStageOptions, IHttpStage } from './stage';
 import { VpcLink, VpcLinkProps } from './vpc-link';
 import { ApiBase } from '../common/base';
@@ -96,7 +96,7 @@ export interface HttpApiProps {
      * An integration that will be configured on the catch-all route ($default).
      * @default - none
      */
-    readonly defaultIntegration?: IHttpRouteIntegration;
+    readonly defaultIntegration?: HttpRouteIntegration;
 
     /**
      * Whether a default stage and deployment should be automatically created.

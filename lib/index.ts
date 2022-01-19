@@ -1,4 +1,6 @@
 export * as apigateway from './apigateway';
+export * as apigateway_authorizers from './apigateway-authorizers';
+export * as apigateway_integrations from './apigateway-integrations';
 export * as appmesh from './appmesh';
 export * as containers from './containers';
 export * as lambda from './lambda';

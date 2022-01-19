@@ -1,8 +1,8 @@
 import { Resource, aws_apigatewayv2 as apigatewayv2 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+import { HttpRouteIntegration } from './integration';
 import { IHttpApi } from './api';
 import { IHttpRouteAuthorizer } from './authorizer';
-import { IHttpRouteIntegration } from './integration';
 import { IRoute } from '../common';
 
 /**
@@ -87,7 +87,7 @@ export interface BatchHttpRouteOptions {
     /**
      * The integration to be configured on this route.
      */
-    readonly integration: IHttpRouteIntegration;
+    readonly integration: HttpRouteIntegration;
 }
 
 /**
