@@ -75,6 +75,20 @@ export interface ContainerExtensionProps {
     readonly dockerLabels?: {
         [key: string]: string,
     }
+
+    /**
+     * When this parameter is true, the container is given read-only access to its root file system.
+     *
+     * @default - false
+     */
+    readonly readonlyRootFilesystem?: boolean;
+
+    /**
+     * The working directory in which to run commands inside the container.
+     *
+     * @default - undefined
+     */
+    readonly workingDirectory?: string;
 }
 
 export interface TrafficPort {
@@ -115,6 +129,8 @@ export class Container extends ServiceExtension {
             image: this.props.image,
             command: this.props.command,
             entryPoint: this.props.entryPoint,
+            readonlyRootFilesystem: this.props.readonlyRootFilesystem,
+            workingDirectory: this.props.workingDirectory,
             cpu: this.props.cpu ? Number(this.props.cpu) : undefined,
             memoryLimitMiB: Number(this.props.memoryMiB),
             environment: this.props.environment,
