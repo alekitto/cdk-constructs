@@ -44,6 +44,14 @@ export interface ServiceProps {
      * @experimental
      */
     readonly capacityProviderStrategies?: ecs.CapacityProviderStrategy[];
+
+    /**
+     * The operating system that your task definitions are running on.
+     * A runtimePlatform is supported only for tasks using the Fargate launch type.
+     *
+     * @default - Undefined.
+     */
+    readonly runtimePlatform?: ecs.RuntimePlatform;
 }
 
 /**
@@ -82,6 +90,9 @@ export class Service extends BaseService {
 
             // Ensure that the task definition supports both EC2 and Fargate
             compatibility: ecs.Compatibility.EC2_AND_FARGATE,
+
+            // Set the correct runtime platform
+            runtimePlatform: props.runtimePlatform,
         } as ecs.TaskDefinitionProps;
 
         if (this.capacityType === EnvironmentCapacityType.FARGATE) {
