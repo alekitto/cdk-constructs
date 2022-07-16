@@ -1,30 +1,10 @@
 import { AssetStaging, BundlingOptions, DockerVolume, aws_lambda as lambda, aws_s3_assets as s3_assets } from 'aws-cdk-lib';
-import { SpawnSyncOptions, spawnSync } from 'child_process';
+import { DockerBuildOptions, DockerImage } from '../core';
+import { dockerExec } from '../util/docker-exec';
+import { flatten } from '../util/flatten';
 import { makeUniqueId } from '../util/uniqueid';
 
-function flatten(x: string[][]) {
-    return Array.prototype.concat([], ...x);
-}
-
-function dockerExec(args: string[], options?: SpawnSyncOptions) {
-    const prog = process.env.CDK_DOCKER ?? 'docker';
-    const proc = spawnSync(prog, args, options);
-
-    if (proc.error) {
-        throw proc.error;
-    }
-
-    if (0 !== proc.status) {
-        if (proc.stdout || proc.stderr) {
-            throw new Error(`[Status ${proc.status}] stdout: ${proc.stdout?.toString().trim()}\n\n\nstderr: ${proc.stderr?.toString().trim()}`);
-        }
-
-        throw new Error(`${prog} exited with status ${proc.status}`);
-    }
-
-    return proc;
-}
-
+interface DockerBuildAssetOptions extends lambda.DockerBuildAssetOptions, DockerBuildOptions {}
 interface BundleVolume {
     volume: DockerVolume,
     volumeName: string,
@@ -125,5 +105,31 @@ export abstract class Code extends lambda.Code {
         } : undefined;
 
         return lambda.Code.fromAsset(path, { ...(options ?? {}), bundling: bundlingOptions });
+    }
+
+    /**
+     * Loads the function code from an asset created by a Docker build.
+     *
+     * By default, the asset is expected to be located at `/asset` in the
+     * image.
+     *
+     * @param path The path to the directory containing the Docker file
+     * @param options Docker build options
+     */
+    static fromDockerBuild(path: string, options?: DockerBuildAssetOptions): lambda.AssetCode {
+        let imagePath = options?.imagePath ?? '/asset/.';
+
+        // Ensure imagePath ends with /. to copy the **content** at this path
+        if (imagePath.endsWith('/')) {
+            imagePath = `${imagePath}.`;
+        } else if (!imagePath.endsWith('/.')) {
+            imagePath = `${imagePath}/.`;
+        }
+
+        const assetPath = DockerImage
+            .fromBuild(path, options)
+            .cp(imagePath, options?.outputPath);
+
+        return new lambda.AssetCode(assetPath);
     }
 }

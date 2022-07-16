@@ -4,6 +4,7 @@ export * as apigateway_integrations from './apigateway-integrations';
 export * as appmesh from './appmesh';
 export * as containers from './containers';
 export * as lambda from './lambda';
+export * from './core';
 export * from './nat';
 export * from './pg_database';
 export * from './s3-file';
