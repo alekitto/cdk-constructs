@@ -15,6 +15,8 @@ interface NetworkLoadBalancerProps {
     readonly listeners: (elb.BaseNetworkListenerProps & {
         proxyProtocolV2?: boolean;
         healthCheck?: elb.HealthCheck;
+        targetProtocol?: elb.Protocol;
+        targetPort?: number,
     })[];
 
     /**
@@ -110,10 +112,10 @@ export class NetworkLoadBalancerExtension extends ServiceExtension {
 
             (listener as elb.NetworkListener).addTargets(`${this.parentService.id}-${i}`, {
                 deregistrationDelay: Duration.seconds(10),
-                port: this.props.listeners[i].port,
+                port: this.props.listeners[i].targetPort ?? this.props.listeners[i].port,
                 targets: [ target ],
                 proxyProtocolV2: this.props.listeners[i].proxyProtocolV2,
-                protocol: this.props.listeners[i].protocol,
+                protocol: this.props.listeners[i].targetProtocol ?? this.props.listeners[i].protocol,
                 healthCheck: this.props.listeners[i].healthCheck,
             });
         });
