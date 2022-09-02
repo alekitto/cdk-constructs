@@ -2,9 +2,8 @@ import { Annotations, aws_iam as iam } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { GitHubActionsIdentityProvider } from './provider';
 import { Mutable } from '../util/mutable';
-import { RoleProps } from './iam-role-props';
 
-const githubUsernameRegex = /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i;
+const githubRepoRegex = /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}\/.+$/i;
 
 /**
  * GitHub related configuration that forms the trust policy for this IAM Role.
@@ -20,16 +19,9 @@ interface GitHubConfiguration {
     readonly provider: GitHubActionsIdentityProvider;
 
     /**
-     * Repository owner (organization or username).
-     *
-     * @example 'octo-org'
-     */
-    readonly owner: string;
-
-    /**
      * Repository name (slug) without the owner.
      *
-     * @example 'octo-repo'
+     * @example 'octo-org/octo-repo'
      */
     readonly repo: string;
 
@@ -67,7 +59,7 @@ interface GitHubConfiguration {
  *   roleName: 'MyDeployRole',
  * }
  */
-interface GitHubActionsRoleProps extends GitHubConfiguration, RoleProps {}
+interface GitHubActionsRoleProps extends GitHubConfiguration, Omit<iam.RoleProps, 'assumedBy'> {}
 
 /**
  * Define an IAM Role that can be assumed by GitHub Actions workflow
@@ -107,10 +99,9 @@ export class GitHubActionsRole extends iam.Role {
      * myBucket.grantWrite(uploadRole);
      */
     constructor(scope: Construct, id: string, props: GitHubActionsRoleProps) {
-        const { provider, owner, repo } = props;
+        const { provider, repo } = props;
 
         // Perform validations
-        GitHubActionsRole.validateOwner(scope, owner);
         GitHubActionsRole.validateRepo(scope, repo);
 
         // Prepare values
@@ -142,31 +133,22 @@ export class GitHubActionsRole extends iam.Role {
     private static extractRoleProps(props: GitHubActionsRoleProps): iam.RoleProps {
         const extractProps: Mutable<Partial<GitHubActionsRoleProps>> = { ...props };
         delete extractProps.provider;
-        delete extractProps.owner;
         delete extractProps.repo;
         delete extractProps.filter;
 
         return extractProps as unknown as iam.RoleProps;
     }
 
-    /** Validates the GitHub owner (organization or user) name. */
-    private static validateOwner(scope: Construct, owner: string): void {
-        if (! githubUsernameRegex.test(owner)) {
-            Annotations.of(scope).addError(`Invalid GitHub Repository Owner "${owner}". Must only contain alphanumeric characters or hyphens, cannot have multiple consecutive hyphens, cannot begin or end with a hypen and maximum lenght is 39 characters.`);
-        }
-    }
-
-    /** Validates the GitHub repository name (without owner). */
+    /** Validates the GitHub repository name. */
     private static validateRepo(scope: Construct, repo: string): void {
-        if ('' === repo) {
-            Annotations.of(scope).addError(`Invalid GitHub Repository Name "${repo}". May not be empty string.`);
+        if (! githubRepoRegex.test(repo)) {
+            Annotations.of(scope).addError(`Invalid GitHub Repository "${repo}". Owner must only contain alphanumeric characters or hyphens, cannot have multiple consecutive hyphens, cannot begin or end with a hyphen and maximum length is 39 characters and repository name cannot be empty.`);
         }
     }
 
     /** Formats the `sub` value used in trust policy. */
-    private static formatSubject(props: GitHubConfiguration): string {
-        const { owner, repo, filter = '*' } = props;
-        return `repo:${owner}/${repo}:${filter}`;
+    private static formatSubject({ repo, filter = '*' }: GitHubConfiguration): string {
+        return `repo:${repo}:${filter}`;
     }
 }
 
