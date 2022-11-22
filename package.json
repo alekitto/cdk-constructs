@@ -14,8 +14,8 @@
   "author": "Alessandro Chitolina <alekitto@gmail.com>",
   "license": "MIT",
   "peerDependencies": {
-    "aws-cdk": "^2.32",
-    "aws-cdk-lib": "^2.32"
+    "aws-cdk": "^2.51",
+    "aws-cdk-lib": "^2.51"
   },
   "dependencies": {
     "constructs": "^10.0.0"
@@ -23,14 +23,14 @@
   "devDependencies": {
     "@types/jest": "^27.4.1",
     "@types/node": "14.14.31",
-    "@typescript-eslint/eslint-plugin": "^5.20.0",
-    "@typescript-eslint/parser": "^5.20.0",
-    "aws-cdk": "^2.32",
+    "@typescript-eslint/eslint-plugin": "^5.44.0",
+    "@typescript-eslint/parser": "^5.44.0",
+    "aws-cdk": "^2.51",
     "eslint": "^8.23.0",
     "jest": "^27.5.1",
     "source-map-support": "^0.5.21",
     "ts-jest": "^27.1.4",
     "ts-node": "^10.9.1",
-    "typescript": "~4.8.2"
+    "typescript": "~4.9.3"
   }
 }
