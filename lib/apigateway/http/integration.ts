@@ -249,6 +249,20 @@ export class HttpIntegration extends Resource implements IHttpIntegration {
 
     constructor(scope: Construct, id: string, props: HttpIntegrationProps) {
         super(scope, id);
+
+        const timeoutInMillis = (() => {
+            if (props.timeout) {
+                const millis = props.timeout.toMilliseconds();
+                if (millis > 30000 || millis < 50) {
+                    throw new Error('API Gateway integration timeout must be between 50 and 30000 ms');
+                }
+
+                return millis;
+            }
+
+            return undefined;
+        })();
+
         const integ = new apigatewayv2.CfnIntegration(this, 'Resource', {
             apiId: props.httpApi.apiId,
             integrationType: props.integrationType,
@@ -258,7 +272,7 @@ export class HttpIntegration extends Resource implements IHttpIntegration {
             connectionType: props.connectionType,
             payloadFormatVersion: props.payloadFormatVersion?.version,
             requestParameters: props.parameterMapping?.mappings,
-            timeoutInMillis: props.timeout?.toMilliseconds(),
+            timeoutInMillis,
         });
 
         if (props.secureServerName) {
