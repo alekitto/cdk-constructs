@@ -6,7 +6,7 @@ import { apigateway } from '../..';
 /**
  * Properties to initialize `HttpNlbIntegration`.
  */
-export type HttpNlbIntegrationProps = HttpPrivateIntegrationOptions
+export type HttpNlbIntegrationProps = HttpPrivateIntegrationOptions;
 
 /**
  * The Network Load Balancer integration resource for HTTP API
@@ -48,6 +48,7 @@ export class HttpNlbIntegration extends HttpPrivateIntegration {
             uri: this.listener.listenerArn,
             secureServerName: this.props.secureServerName,
             parameterMapping: this.props.parameterMapping,
+            timeout: this.props.timeout,
         };
     }
 }

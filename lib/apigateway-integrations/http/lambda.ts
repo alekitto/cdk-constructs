@@ -1,4 +1,4 @@
-import { Stack, aws_iam as iam, aws_lambda as lambda } from 'aws-cdk-lib';
+import {Stack, aws_iam as iam, aws_lambda as lambda, Duration} from 'aws-cdk-lib';
 import { apigateway } from '../..';
 
 /**
@@ -18,6 +18,12 @@ export interface HttpLambdaIntegrationProps {
    * @default undefined requests are sent to the backend unmodified
    */
   readonly parameterMapping?: apigateway.ParameterMapping;
+
+  /**
+   * Specifies the timeout of the HTTP request
+   * @default undefined
+   */
+  readonly timeout?: Duration;
 }
 
 /**
@@ -58,6 +64,7 @@ export class HttpLambdaIntegration extends apigateway.HttpRouteIntegration {
             uri: this.handler.functionArn,
             payloadFormatVersion: this.props.payloadFormatVersion ?? apigateway.PayloadFormatVersion.VERSION_2_0,
             parameterMapping: this.props.parameterMapping,
+            timeout: this.props.timeout,
         };
     }
 }

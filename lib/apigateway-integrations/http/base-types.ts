@@ -1,3 +1,4 @@
+import {Duration} from 'aws-cdk-lib';
 import { apigateway } from '../..';
 
 /**
@@ -31,4 +32,10 @@ export interface HttpPrivateIntegrationOptions {
     * @default undefined requests are sent to the backend unmodified
     */
     readonly parameterMapping?: apigateway.ParameterMapping;
+
+    /**
+     * Specifies the timeout of the HTTP request
+     * @default undefined
+     */
+    readonly timeout?: Duration;
 }

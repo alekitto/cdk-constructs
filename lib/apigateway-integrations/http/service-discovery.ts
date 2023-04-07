@@ -6,7 +6,7 @@ import { aws_servicediscovery as servicediscovery } from 'aws-cdk-lib';
 /**
  * Properties to initialize `HttpServiceDiscoveryIntegration`.
  */
-export type HttpServiceDiscoveryIntegrationProps = HttpPrivateIntegrationOptions
+export type HttpServiceDiscoveryIntegrationProps = HttpPrivateIntegrationOptions;
 
 /**
  * The Service Discovery integration resource for HTTP API
@@ -39,6 +39,7 @@ export class HttpServiceDiscoveryIntegration extends HttpPrivateIntegration {
             uri: this.service.serviceArn,
             secureServerName: this.props.secureServerName,
             parameterMapping: this.props.parameterMapping,
+            timeout: this.props.timeout,
         };
     }
 }

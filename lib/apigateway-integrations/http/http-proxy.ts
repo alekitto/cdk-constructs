@@ -1,3 +1,4 @@
+import {Duration} from 'aws-cdk-lib';
 import { apigateway } from '../..';
 
 /**
@@ -16,6 +17,12 @@ export interface HttpUrlIntegrationProps {
    * @default undefined requests are sent to the backend unmodified
    */
   readonly parameterMapping?: apigateway.ParameterMapping;
+
+  /**
+   * Specifies the timeout of the HTTP request
+   * @default undefined
+   */
+  readonly timeout?: Duration;
 }
 
 /**
@@ -38,6 +45,7 @@ export class HttpUrlIntegration extends apigateway.HttpRouteIntegration {
             type: apigateway.HttpIntegrationType.HTTP_PROXY,
             uri: this.url,
             parameterMapping: this.props.parameterMapping,
+            timeout: this.props.timeout,
         };
     }
 }

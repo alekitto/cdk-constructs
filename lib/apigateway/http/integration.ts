@@ -1,5 +1,5 @@
 import { HttpMethod, IHttpRoute } from './route';
-import { Resource, aws_apigatewayv2 as apigatewayv2, aws_iam as iam } from 'aws-cdk-lib';
+import {Resource, aws_apigatewayv2 as apigatewayv2, aws_iam as iam, Duration} from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { IHttpApi } from './api';
 import { IIntegration } from '../common';
@@ -229,6 +229,13 @@ export interface HttpIntegrationProps {
      * @default - no credentials, use resource-based permissions on supported AWS services
      */
     readonly credentials?: IntegrationCredentials;
+
+    /**
+     * The timeout of the integration
+     *
+     * @default - use the integration default (ex: lambda defaults to 30s)
+     */
+    readonly timeout?: Duration;
 }
 
 /**
@@ -251,6 +258,7 @@ export class HttpIntegration extends Resource implements IHttpIntegration {
             connectionType: props.connectionType,
             payloadFormatVersion: props.payloadFormatVersion?.version,
             requestParameters: props.parameterMapping?.mappings,
+            timeoutInMillis: props.timeout?.toMilliseconds(),
         });
 
         if (props.secureServerName) {
@@ -318,6 +326,7 @@ export abstract class HttpRouteIntegration {
                 secureServerName: config.secureServerName,
                 parameterMapping: config.parameterMapping,
                 credentials: config.credentials,
+                timeout: config.timeout,
             });
         }
         return { integrationId: this.integration.integrationId };
@@ -400,4 +409,11 @@ export interface HttpRouteIntegrationConfig {
      * @default - no credentials, use resource-based permissions on supported AWS services
      */
     readonly credentials?: IntegrationCredentials;
+
+    /**
+     * The integration timeout
+     *
+     * @default - no timeout is defined, uses the integration default
+     */
+    readonly timeout?: Duration;
 }
