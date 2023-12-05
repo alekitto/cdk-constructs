@@ -15,7 +15,7 @@ import { Construct } from 'constructs';
 import { Service } from '../service';
 
 // The version of the App Mesh envoy sidecar to add to the task.
-const APP_MESH_ENVOY_SIDECAR_VERSION = 'v1.20.0.1-prod';
+const APP_MESH_ENVOY_SIDECAR_VERSION = 'v1.27.2.0-prod';
 const meshNameCleanup = (name: string) => name.replace(/[^a-zA-Z0-9\-_]+/g, '-');
 
 /**
