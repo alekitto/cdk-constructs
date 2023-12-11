@@ -26,6 +26,7 @@ interface RegistryOrLocalCacheExport extends CacheExportInterface {
     type: CacheExportType.Registry | CacheExportType.Local;
     destination: string;
     ociMediatypes?: boolean;
+    imageManifest?: boolean;
     compression?: {
         type?: 'uncompressed' | 'gzip' | 'estargz' | 'zstd';
         level?: number;
@@ -64,6 +65,7 @@ export function renderCacheExport(cache: CacheExport): string {
                 ...(cache.mode && cache.type === CacheExportType.Registry ? [ 'mode=' + cache.mode ] : []),
                 ...(cache.destination ? [ (cache.type === CacheExportType.Local ? 'dest=' : 'ref=') + cache.destination ] : []),
                 ...(cache.ociMediatypes ? [ 'oci-mediatypes=' + JSON.stringify(cache.ociMediatypes) ] : []),
+                ...(cache.imageManifest ? [ 'image-manifest=' + JSON.stringify(cache.imageManifest) ] : []),
                 ...(cache.compression?.type ? [ 'compression=' + cache.compression.type ] : []),
                 ...(cache.compression?.level ? [ 'compression-level=' + cache.compression.level ] : []),
                 ...(cache.compression?.force ? [ 'force-compression=' + JSON.stringify(cache.compression.force) ] : []),
