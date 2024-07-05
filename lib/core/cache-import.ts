@@ -43,7 +43,7 @@ interface S3CacheImport extends CacheImportInterface {
 export type CacheImport = LocalImport | RegistryImport | GhaCacheImport | S3CacheImport;
 
 export function renderCacheImport(cache: CacheImport): string {
-    const attrs = ['type=' + cache.type];
+    const attrs = [ 'type=' + cache.type ];
     switch (cache.type) {
         case CacheImportType.GitHubActions: {
             attrs.push(

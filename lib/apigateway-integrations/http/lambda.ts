@@ -1,4 +1,4 @@
-import {Stack, aws_iam as iam, aws_lambda as lambda, Duration} from 'aws-cdk-lib';
+import { Duration, Stack, aws_iam as iam, aws_lambda as lambda } from 'aws-cdk-lib';
 import { apigateway } from '../..';
 
 /**

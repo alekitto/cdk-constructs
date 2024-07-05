@@ -1,5 +1,5 @@
+import { Duration, Resource, aws_apigatewayv2 as apigatewayv2, aws_iam as iam } from 'aws-cdk-lib';
 import { HttpMethod, IHttpRoute } from './route';
-import {Resource, aws_apigatewayv2 as apigatewayv2, aws_iam as iam, Duration} from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { IHttpApi } from './api';
 import { IIntegration } from '../common';
@@ -253,7 +253,7 @@ export class HttpIntegration extends Resource implements IHttpIntegration {
         const timeoutInMillis = (() => {
             if (props.timeout) {
                 const millis = props.timeout.toMilliseconds();
-                if (millis > 30000 || millis < 50) {
+                if (30000 < millis || 50 > millis) {
                     throw new Error('API Gateway integration timeout must be between 50 and 30000 ms');
                 }
 

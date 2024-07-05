@@ -48,7 +48,7 @@ interface S3CacheExport extends CacheExportInterface {
 
 export type CacheExport = RegistryOrLocalCacheExport | GhaCacheExport | S3CacheExport | InlineCacheExport;
 export function renderCacheExport(cache: CacheExport): string {
-    const attrs = ['type=' + cache.type];
+    const attrs = [ 'type=' + cache.type ];
     switch (cache.type) {
         case CacheExportType.GitHubActions: {
             attrs.push(
