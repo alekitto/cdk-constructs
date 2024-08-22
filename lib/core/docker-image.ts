@@ -30,7 +30,7 @@ export class DockerImage extends BaseImage {
         const tag = `cdk-${tagHash}`;
 
         const dockerArgs: string[] = [
-            'buildx', 'build', '--load', '-t', tag,
+            'buildx', 'build', '--load', '-t', tag, '--progress=plain',
             ...(options.file ? [ '-f', join(path, options.file) ] : []),
             ...(options.platform ? [ '--platform', options.platform ] : []),
             ...(options.targetStage ? [ '--target', options.targetStage ] : []),
