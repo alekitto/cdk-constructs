@@ -1,5 +1,6 @@
 import {
-    Duration, Tags,
+    Duration,
+    Tags,
     aws_autoscaling as asg,
     aws_ec2 as ec2,
     aws_events as events,
@@ -21,20 +22,27 @@ export class NatAsgProvider extends ec2.NatProvider implements ec2.IConnectable 
     }
 
     public configureNat(options: ec2.ConfigureNatOptions) {
-        const defaultDirection = this.props.defaultAllowedTraffic ?? ec2.NatTrafficDirection.INBOUND_AND_OUTBOUND;
+        const defaultDirection = this.props.defaultAllowedTraffic ?? ec2.NatTrafficDirection.OUTBOUND_ONLY;
 
         // Create the NAT instances. They can share a security group and a Role.
-        const machineImage = this.props.machineImage || new ec2.NatInstanceImage();
-        this._securityGroup = this.props.securityGroup ?? new ec2.SecurityGroup(this.scope, 'NatSecurityGroup', {
-            vpc: options.vpc,
-            description: 'Security Group for NAT instances',
-            allowAllOutbound: isOutboundAllowed(defaultDirection),
+        const machineImage = this.props.machineImage || ec2.MachineImage.latestAmazonLinux2023({
+            cpuType: this.props.instanceType.architecture == ec2.InstanceArchitecture.ARM_64 ? ec2.AmazonLinuxCpuType.ARM_64 : ec2.AmazonLinuxCpuType.X86_64,
         });
 
-        this._connections = new ec2.Connections({ securityGroups: [ this._securityGroup ] });
+        this._securityGroup = this.props.securityGroup;
+        if (this._securityGroup === undefined) {
+            this._securityGroup = new ec2.SecurityGroup(this.scope, 'NatSecurityGroup', {
+                vpc: options.vpc,
+                description: 'Security Group for NAT instances',
+                allowAllOutbound: isOutboundAllowed(defaultDirection),
+            });
 
-        if (isInboundAllowed(defaultDirection)) {
-            this.connections.allowFromAnyIpv4(ec2.Port.allTraffic());
+            this._connections = new ec2.Connections({ securityGroups: [ this._securityGroup ] });
+            if (isInboundAllowed(defaultDirection)) {
+                this.connections.allowFromAnyIpv4(ec2.Port.allTraffic());
+            }
+        } else {
+            this._connections = new ec2.Connections({ securityGroups: [ this._securityGroup ] });
         }
 
         // Add routes to them in the private subnets
@@ -88,6 +96,7 @@ export class NatAsgProvider extends ec2.NatProvider implements ec2.IConnectable 
             vpcSubnets: { subnets: options.natSubnets },
             securityGroup: this._securityGroup,
             keyName: this.props.keyName,
+            keyPair: this.props.keyPair,
         });
 
         natGroup.node.addDependency(eventRule);
