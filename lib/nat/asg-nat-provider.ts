@@ -76,7 +76,7 @@ export class NatAsgProvider extends ec2.NatProvider implements ec2.IConnectable 
             handler: 'index.lambda_handler',
             code: lambda.Code.fromAsset(__dirname + '/lambda/configure-nat'),
             timeout: Duration.seconds(15),
-            runtime: lambda.Runtime.PYTHON_3_8,
+            runtime: lambda.Runtime.PYTHON_3_11,
             role: lambraRole,
         });
 
@@ -91,12 +91,14 @@ export class NatAsgProvider extends ec2.NatProvider implements ec2.IConnectable 
 
         const natGroup = new asg.AutoScalingGroup(this.scope, 'NATAutoScalingGroup', {
             vpc: options.vpc,
-            instanceType: this.props.instanceType,
-            machineImage,
             vpcSubnets: { subnets: options.natSubnets },
-            securityGroup: this._securityGroup,
-            keyName: this.props.keyName,
-            keyPair: this.props.keyPair,
+            launchTemplate: new ec2.LaunchTemplate(this.scope, 'NATAutoScalingGroupLT', {
+                machineImage,
+                instanceType: this.props.instanceType,
+                securityGroup: this._securityGroup,
+                keyName: this.props.keyName,
+                keyPair: this.props.keyPair,
+            }),
         });
 
         natGroup.node.addDependency(eventRule);
