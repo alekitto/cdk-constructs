@@ -68,6 +68,15 @@ export interface ContainerExtensionProps {
     }
 
     /**
+     * The secret environment variables to pass to the container.
+     *
+     * @default - No secret environment variables.
+     */
+    readonly secrets?: {
+        [key: string]: ecs.Secret,
+    }
+
+    /**
      * Docker labels to pass into the container.
      *
      * @default - No labels.
@@ -134,6 +143,7 @@ export class Container extends ServiceExtension {
             cpu: this.props.cpu ? Number(this.props.cpu) : undefined,
             memoryLimitMiB: Number(this.props.memoryMiB),
             environment: this.props.environment,
+            secrets: this.props.secrets,
             dockerLabels: this.props.dockerLabels,
             logging: this.props.logging,
         } as ecs.ContainerDefinitionOptions;

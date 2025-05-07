@@ -1,6 +1,6 @@
 {
   "name": "@alekitto/cdk-constructs",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "AWS CDK constructs",
   "main": "lib/index.js",
   "scripts": {
